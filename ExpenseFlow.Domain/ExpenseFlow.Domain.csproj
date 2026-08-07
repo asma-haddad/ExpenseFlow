@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EasyDatabaseManager" Version="1.1.0" />
+    <PackageReference Include="MediatR" Version="14.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.2" />
+    <PackageReference Include="MimeKit" Version="4.15.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="QuestPDF" Version="2026.6.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.1.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+  </ItemGroup>
+
+</Project>
