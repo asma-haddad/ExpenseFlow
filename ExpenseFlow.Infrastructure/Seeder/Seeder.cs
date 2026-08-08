@@ -1,8 +1,8 @@
-using System.Security.Cryptography;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using ExpenseFlow.Domain.Model.User;
 using ExpenseFlow.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using System.Security.Cryptography;
 
 namespace ExpenseFlow.Infrastructure.Seeder;
 
@@ -12,11 +12,11 @@ public static class Seeder
     {
         var db = services.GetRequiredService<AppDbContext>();
 
-        var adminRole = await db.Roles.FirstOrDefaultAsync(x => x.Name == "Admin");
+        var adminRole = await db.Role.FirstOrDefaultAsync(x => x.Name == "Admin");
         if (adminRole == null)
         {
             adminRole = new Role { Name = "Admin" };
-            db.Roles.Add(adminRole);
+            db.Role.Add(adminRole);
             await db.SaveChangesAsync();
         }
 
@@ -32,21 +32,21 @@ public static class Seeder
 
         foreach (var name in permissionNames)
         {
-            if (!await db.Permissions.AnyAsync(x => x.Name == name))
-                db.Permissions.Add(new Permission { Name = name });
+            if (!await db.Permission.AnyAsync(x => x.Name == name))
+                db.Permission.Add(new Permission { Name = name });
         }
 
         await db.SaveChangesAsync();
 
-        var permissions = await db.Permissions.ToListAsync();
+        var permissions = await db.RolePermission.ToListAsync();
         foreach (var permission in permissions)
         {
-            var exists = await db.RolePermissions.AnyAsync(x =>
+            var exists = await db.RolePermission.AnyAsync(x =>
                 x.RoleId == adminRole.Id && x.PermissionId == permission.Id);
 
             if (!exists)
             {
-                db.RolePermissions.Add(new RolePermission
+                db.RolePermission.Add(new RolePermission
                 {
                     RoleId = adminRole.Id,
                     PermissionId = permission.Id
@@ -55,9 +55,9 @@ public static class Seeder
         }
 
         var adminEmail = "admin@expenseflow.local";
-        if (!await db.Users.AnyAsync(x => x.Email == adminEmail))
+        if (!await db.User.AnyAsync(x => x.Email == adminEmail))
         {
-            db.Users.Add(new User
+            db.User.Add(new UserModel
             {
                 FirstName = "System",
                 LastName = "Admin",

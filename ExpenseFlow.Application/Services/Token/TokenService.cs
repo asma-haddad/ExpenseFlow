@@ -16,7 +16,7 @@ public class TokenService : ITokenService
         _settings = settings;
     }
 
-    public string GenerateToken(User user, IEnumerable<string> permissions)
+    public string GenerateToken(UserModel user, IEnumerable<string> permissions)
     {
         var claims = new List<Claim>
         {

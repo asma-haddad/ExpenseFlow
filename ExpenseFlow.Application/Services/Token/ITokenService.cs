@@ -4,5 +4,5 @@ namespace ExpenseFlow.Application.Services.Token;
 
 public interface ITokenService
 {
-    string GenerateToken(User user, IEnumerable<string> permissions);
+    string GenerateToken(UserModel user, IEnumerable<string> permissions);
 }

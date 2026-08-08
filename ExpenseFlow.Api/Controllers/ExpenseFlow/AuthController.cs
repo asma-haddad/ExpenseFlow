@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using ExpenseFlow.Application.Dto.Auth;
 using ExpenseFlow.Application.Services.Helper;
 using ExpenseFlow.Application.Services.Token;
 using ExpenseFlow.Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseFlow.Api.Controllers.ExpenseFlow;
 
@@ -25,7 +25,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Login(LoginRequest request)
     {
-        var user = await _db.Users
+        var user = await _db.User
             .Include(x => x.Role)
             .ThenInclude(x => x.RolePermissions)
             .ThenInclude(x => x.Permission)

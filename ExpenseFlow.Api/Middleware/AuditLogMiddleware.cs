@@ -1,7 +1,7 @@
-using System.Diagnostics;
-using System.Security.Claims;
 using ExpenseFlow.Domain.Model.AuditLog;
 using ExpenseFlow.Infrastructure.Data;
+using System.Diagnostics;
+using System.Security.Claims;
 
 namespace ExpenseFlow.Api.Middleware;
 
@@ -37,7 +37,7 @@ public class AuditLogMiddleware
             {
                 try
                 {
-                    db.AuditLogs.Add(new AuditLog
+                    db.AuditLog.Add(new AuditLog
                     {
                         Method = context.Request.Method,
                         Path = context.Request.Path,

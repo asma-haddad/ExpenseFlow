@@ -1,34 +1,68 @@
-using Microsoft.EntityFrameworkCore;
 using ExpenseFlow.Domain.Model.AuditLog;
 using ExpenseFlow.Domain.Model.Base;
 using ExpenseFlow.Domain.Model.User;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace ExpenseFlow.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options)
+        : base(options)
     {
     }
 
-    public DbSet<User> Users => Set<User>();
-    public DbSet<Role> Roles => Set<Role>();
-    public DbSet<Permission> Permissions => Set<Permission>();
-    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
-    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    #region User
+
+    public DbSet<UserModel> User { get; set; }
+    public DbSet<Role> Role { get; set; }
+    public DbSet<Permission> Permission { get; set; }
+    public DbSet<RolePermission> RolePermission { get; set; }
+    public DbSet<SessionModel> Session { get; set; }
+    #endregion
+
+    #region AuditLog
+
+    public DbSet<AuditLog> AuditLog { get; set; }
+
+    #endregion
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<User>(entity =>
+        ApplyConfigurations(modelBuilder);
+        ApplyIsValidQueryFilter(modelBuilder);
+    }
+
+    private static void ApplyConfigurations(ModelBuilder modelBuilder)
+    {
+        #region User
+
+        modelBuilder.Entity<UserModel>(entity =>
         {
-            entity.HasQueryFilter(x => x.IsValid);
-            entity.HasIndex(x => x.Email).IsUnique();
-            entity.Property(x => x.Email).HasMaxLength(255).IsRequired();
-            entity.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
-            entity.Property(x => x.LastName).HasMaxLength(100).IsRequired();
-            entity.Property(x => x.PasswordHash).IsRequired();
+            entity.ToTable("User");
+
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => x.Email)
+                .IsUnique();
+
+            entity.Property(x => x.Email)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(x => x.FirstName)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(x => x.LastName)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(x => x.PasswordHash)
+                .IsRequired();
 
             entity.HasOne(x => x.Role)
                 .WithMany(x => x.Users)
@@ -38,22 +72,43 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasQueryFilter(x => x.IsValid);
-            entity.HasIndex(x => x.Name).IsUnique();
-            entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            entity.ToTable("Role");
+
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => x.Name)
+                .IsUnique();
+
+            entity.Property(x => x.Name)
+                .HasMaxLength(100)
+                .IsRequired();
         });
 
         modelBuilder.Entity<Permission>(entity =>
         {
-            entity.HasQueryFilter(x => x.IsValid);
-            entity.HasIndex(x => x.Name).IsUnique();
-            entity.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            entity.ToTable("Permission");
+
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => x.Name)
+                .IsUnique();
+
+            entity.Property(x => x.Name)
+                .HasMaxLength(150)
+                .IsRequired();
         });
 
         modelBuilder.Entity<RolePermission>(entity =>
         {
-            entity.HasQueryFilter(x => x.IsValid);
-            entity.HasIndex(x => new { x.RoleId, x.PermissionId }).IsUnique();
+            entity.ToTable("RolePermission");
+
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => new
+            {
+                x.RoleId,
+                x.PermissionId
+            }).IsUnique();
 
             entity.HasOne(x => x.Role)
                 .WithMany(x => x.RolePermissions)
@@ -66,49 +121,146 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        #endregion
+
+        #region AuditLog
+
         modelBuilder.Entity<AuditLog>(entity =>
         {
-            entity.HasQueryFilter(x => x.IsValid);
-            entity.Property(x => x.Method).HasMaxLength(20);
-            entity.Property(x => x.Path).HasMaxLength(1000);
-            entity.Property(x => x.IpAddress).HasMaxLength(100);
-            entity.Property(x => x.UserId).HasMaxLength(100);
+            entity.ToTable("AuditLog");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Method)
+                .HasMaxLength(20);
+
+            entity.Property(x => x.Path)
+                .HasMaxLength(1000);
+
+            entity.Property(x => x.IpAddress)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.UserId)
+                .HasMaxLength(100);
         });
+
+        #endregion
+    }
+
+    private static void ApplyIsValidQueryFilter(ModelBuilder modelBuilder)
+    {
+        var baseModelTypes = modelBuilder.Model
+            .GetEntityTypes()
+            .Where(entityType =>
+                typeof(BaseModel).IsAssignableFrom(entityType.ClrType))
+            .Select(entityType => entityType.ClrType)
+            .ToList();
+
+        var filterMethod = typeof(AppDbContext)
+            .GetMethod(
+                nameof(SetIsValidQueryFilter),
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+        if (filterMethod is null)
+        {
+            throw new InvalidOperationException(
+                "SetIsValidQueryFilter method was not found.");
+        }
+
+        foreach (var entityType in baseModelTypes)
+        {
+            filterMethod
+                .MakeGenericMethod(entityType)
+                .Invoke(null, new object[] { modelBuilder });
+        }
+    }
+
+    private static void SetIsValidQueryFilter<TEntity>(
+        ModelBuilder modelBuilder)
+        where TEntity : BaseModel
+    {
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(entity => entity.IsValid);
     }
 
     public override int SaveChanges()
     {
-        ApplyBaseModelRules();
+        FillBaseInfo();
         return base.SaveChanges();
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
-        ApplyBaseModelRules();
+        FillBaseInfo();
+
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        FillBaseInfo();
+
         return base.SaveChangesAsync(cancellationToken);
     }
 
-    private void ApplyBaseModelRules()
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
     {
-        var now = DateTime.UtcNow;
+        FillBaseInfo();
 
-        foreach (var entry in ChangeTracker.Entries<BaseModel>())
+        return base.SaveChangesAsync(
+            acceptAllChangesOnSuccess,
+            cancellationToken);
+    }
+
+    private void FillBaseInfo()
+    {
+        var dateTime = DateTime.UtcNow;
+
+        var entries = ChangeTracker
+            .Entries<BaseModel>()
+            .ToList();
+
+        foreach (var entry in entries)
         {
-            if (entry.State == EntityState.Added)
+            switch (entry.State)
             {
-                entry.Entity.CreatedAt = now;
-                entry.Entity.IsValid = true;
-            }
-            else if (entry.State == EntityState.Modified)
-            {
-                entry.Entity.UpdatedAt = now;
-            }
-            else if (entry.State == EntityState.Deleted)
-            {
-                entry.State = EntityState.Modified;
-                entry.Entity.IsValid = false;
-                entry.Entity.DeletedAt = now;
-                entry.Entity.UpdatedAt = now;
+                case EntityState.Added:
+                    {
+                        entry.Entity.CreatedAt = dateTime;
+                        entry.Entity.UpdatedAt = null;
+                        entry.Entity.DeletedAt = null;
+                        entry.Entity.IsValid = true;
+
+                        break;
+                    }
+
+                case EntityState.Modified:
+                    {
+                        entry.Entity.UpdatedAt = dateTime;
+
+                        entry.Property(x => x.CreatedAt)
+                            .IsModified = false;
+
+                        break;
+                    }
+
+                case EntityState.Deleted:
+                    {
+                        // تحويل الحذف الحقيقي إلى Soft Delete.
+                        entry.State = EntityState.Modified;
+
+                        entry.Entity.IsValid = false;
+                        entry.Entity.DeletedAt = dateTime;
+                        entry.Entity.UpdatedAt = dateTime;
+
+                        entry.Property(x => x.CreatedAt)
+                            .IsModified = false;
+
+                        break;
+                    }
             }
         }
     }
