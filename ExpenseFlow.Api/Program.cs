@@ -1,5 +1,15 @@
 using EasyDatabaseManager.Configuration;
 using EasyDatabaseManager.Endpoints;
+using ExpenseFlow.Api.Extension;
+using ExpenseFlow.Api.Middleware;
+using ExpenseFlow.Application.Services.AutoAssignment;
+using ExpenseFlow.Application.Services.Email;
+using ExpenseFlow.Application.Services.Excel;
+using ExpenseFlow.Application.Services.File;
+using ExpenseFlow.Application.Services.Helper;
+using ExpenseFlow.Application.Services.Token;
+using ExpenseFlow.Infrastructure.Data;
+using ExpenseFlow.Infrastructure.Seeder;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -11,16 +21,6 @@ using System.Globalization;
 using System.Linq.Dynamic.Core;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-using ExpenseFlow.Api.Extension;
-using ExpenseFlow.Api.Middleware;
-using ExpenseFlow.Application.Services.AutoAssignment;
-using ExpenseFlow.Application.Services.Email;
-using ExpenseFlow.Application.Services.Excel;
-using ExpenseFlow.Application.Services.File;
-using ExpenseFlow.Application.Services.Helper;
-using ExpenseFlow.Application.Services.Token;
-using ExpenseFlow.Infrastructure.Data;
-using ExpenseFlow.Infrastructure.Seeder;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,12 +89,26 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 });
 
 // ---- DbContext ----
+//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+//    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is missing.");
+
+//builder.Services.AddDbContext<AppDbContext>(options =>
+//{
+//    options.UseMySQL(connectionString);
+
+//    if (builder.Environment.IsDevelopment())
+//    {
+//        options.EnableSensitiveDataLogging();
+//        options.EnableDetailedErrors();
+//    }
+//});
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is missing.");
+    ?? throw new InvalidOperationException(
+        "ConnectionStrings:DefaultConnection is missing.");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseMySQL(connectionString);
+    options.UseNpgsql(connectionString);
 
     if (builder.Environment.IsDevelopment())
     {
@@ -102,6 +116,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.EnableDetailedErrors();
     }
 });
+
+
+
 
 // ---- MediatR ----
 builder.Services.AddMediatR(s =>
@@ -113,7 +130,7 @@ builder.Services.AddMediatR(s =>
 builder.Services.AddEasyDatabaseManager(options =>
 {
     options.ConnectionString = connectionString;
-    options.DatabaseType = DatabaseType.MySql;
+    options.DatabaseType = DatabaseType.PostgreSql;
     options.RoutePrefix = "/sql";
     options.EnableWriteOperations = builder.Environment.IsDevelopment();
     options.SoftDeleteColumn = "IsValid";
