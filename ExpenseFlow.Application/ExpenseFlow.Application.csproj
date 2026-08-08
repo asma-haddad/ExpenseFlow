@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -28,4 +28,76 @@
     <ProjectReference Include="..\ExpenseFlow.Infrastructure\ExpenseFlow.Infrastructure.csproj" />
   </ItemGroup>
 
+
+  <ItemGroup Label="ZeeleadStyleFolders">
+    <Folder Include="Extensions\" />
+    <Folder Include="Features\Dashboard\Auth\ForgotPassword\" />
+    <Folder Include="Features\Dashboard\Auth\Login\" />
+    <Folder Include="Features\Dashboard\Auth\Logout\" />
+    <Folder Include="Features\Dashboard\Auth\RefreshToken\" />
+    <Folder Include="Features\Dashboard\Auth\ResetPassword\" />
+    <Folder Include="Features\Dashboard\Budget\Command\Add\" />
+    <Folder Include="Features\Dashboard\Budget\Command\BulkDelete\" />
+    <Folder Include="Features\Dashboard\Budget\Command\Delete\" />
+    <Folder Include="Features\Dashboard\Budget\Command\Import\" />
+    <Folder Include="Features\Dashboard\Budget\Command\Update\" />
+    <Folder Include="Features\Dashboard\Budget\Command\UpdateStatus\" />
+    <Folder Include="Features\Dashboard\Budget\Query\GetAll\" />
+    <Folder Include="Features\Dashboard\Budget\Query\GetDetails\" />
+    <Folder Include="Features\Dashboard\Budget\Query\GetStatistics\" />
+    <Folder Include="Features\Dashboard\Category\Command\Add\" />
+    <Folder Include="Features\Dashboard\Category\Command\BulkDelete\" />
+    <Folder Include="Features\Dashboard\Category\Command\Delete\" />
+    <Folder Include="Features\Dashboard\Category\Command\Import\" />
+    <Folder Include="Features\Dashboard\Category\Command\Update\" />
+    <Folder Include="Features\Dashboard\Category\Command\UpdateStatus\" />
+    <Folder Include="Features\Dashboard\Category\Query\GetAll\" />
+    <Folder Include="Features\Dashboard\Category\Query\GetDetails\" />
+    <Folder Include="Features\Dashboard\Category\Query\GetStatistics\" />
+    <Folder Include="Features\Dashboard\Expense\Command\Add\" />
+    <Folder Include="Features\Dashboard\Expense\Command\BulkDelete\" />
+    <Folder Include="Features\Dashboard\Expense\Command\Delete\" />
+    <Folder Include="Features\Dashboard\Expense\Command\Import\" />
+    <Folder Include="Features\Dashboard\Expense\Command\Update\" />
+    <Folder Include="Features\Dashboard\Expense\Command\UpdateStatus\" />
+    <Folder Include="Features\Dashboard\Expense\Query\GetAll\" />
+    <Folder Include="Features\Dashboard\Expense\Query\GetDetails\" />
+    <Folder Include="Features\Dashboard\Expense\Query\GetStatistics\" />
+    <Folder Include="Features\Dashboard\Notification\Command\Add\" />
+    <Folder Include="Features\Dashboard\Notification\Command\Delete\" />
+    <Folder Include="Features\Dashboard\Notification\Command\UpdateStatus\" />
+    <Folder Include="Features\Dashboard\Notification\Query\GetAll\" />
+    <Folder Include="Features\Dashboard\Notification\Query\GetDetails\" />
+    <Folder Include="Features\Dashboard\Role\Command\Add\" />
+    <Folder Include="Features\Dashboard\Role\Command\BulkDelete\" />
+    <Folder Include="Features\Dashboard\Role\Command\Delete\" />
+    <Folder Include="Features\Dashboard\Role\Command\Import\" />
+    <Folder Include="Features\Dashboard\Role\Command\Update\" />
+    <Folder Include="Features\Dashboard\Role\Command\UpdateStatus\" />
+    <Folder Include="Features\Dashboard\Role\Query\GetAll\" />
+    <Folder Include="Features\Dashboard\Role\Query\GetDetails\" />
+    <Folder Include="Features\Dashboard\Role\Query\GetStatistics\" />
+    <Folder Include="Features\Dashboard\Setting\Command\Update\" />
+    <Folder Include="Features\Dashboard\Setting\Query\GetAll\" />
+    <Folder Include="Features\Dashboard\Statistics\Category\" />
+    <Folder Include="Features\Dashboard\Statistics\Monthly\" />
+    <Folder Include="Features\Dashboard\Statistics\Overview\" />
+    <Folder Include="Features\Dashboard\User\Command\BulkDelete\" />
+    <Folder Include="Features\Dashboard\User\Command\Delete\" />
+    <Folder Include="Features\Dashboard\User\Command\Import\" />
+    <Folder Include="Features\Dashboard\User\Command\Update\" />
+    <Folder Include="Features\Dashboard\User\Command\UpdateStatus\" />
+    <Folder Include="Features\Dashboard\User\Query\GetAll\" />
+    <Folder Include="Features\Dashboard\User\Query\GetDetails\" />
+    <Folder Include="Features\Dashboard\User\Query\GetStatistics\" />
+    <Folder Include="Features\Reports\Budget\" />
+    <Folder Include="Features\Reports\Category\" />
+    <Folder Include="Features\Reports\Expense\" />
+    <Folder Include="Features\Reports\Monthly\" />
+    <Folder Include="Services\Email\" />
+    <Folder Include="Services\Excel\" />
+    <Folder Include="Services\File\" />
+    <Folder Include="Services\Helper\" />
+    <Folder Include="Services\Token\" />
+  </ItemGroup>
 </Project>

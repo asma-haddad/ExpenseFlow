@@ -19,4 +19,19 @@
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
   </ItemGroup>
 
+
+  <ItemGroup Label="ZeeleadStyleFolders">
+    <Folder Include="Base\Dto\" />
+    <Folder Include="Base\Language\" />
+    <Folder Include="Models\AuditLog\" />
+    <Folder Include="Models\Base\" />
+    <Folder Include="Models\Budget\" />
+    <Folder Include="Models\Category\" />
+    <Folder Include="Models\Expense\" />
+    <Folder Include="Models\Notification\" />
+    <Folder Include="Models\User\" />
+    <Folder Include="Shared\Attribute\" />
+    <Folder Include="Shared\Enum\" />
+    <Folder Include="Shared\Resources\" />
+  </ItemGroup>
 </Project>
