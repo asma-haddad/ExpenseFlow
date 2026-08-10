@@ -30,7 +30,6 @@
 
 
   <ItemGroup Label="ZeeleadStyleFolders">
-    <Folder Include="Extensions\" />
     <Folder Include="Features\Dashboard\Auth\ForgotPassword\" />
     <Folder Include="Features\Dashboard\Auth\Login\" />
     <Folder Include="Features\Dashboard\Auth\Logout\" />
@@ -87,7 +86,6 @@
     <Folder Include="Features\Dashboard\User\Command\Import\" />
     <Folder Include="Features\Dashboard\User\Command\Update\" />
     <Folder Include="Features\Dashboard\User\Command\UpdateStatus\" />
-    <Folder Include="Features\Dashboard\User\Query\GetAll\" />
     <Folder Include="Features\Dashboard\User\Query\GetDetails\" />
     <Folder Include="Features\Dashboard\User\Query\GetStatistics\" />
     <Folder Include="Features\Reports\Budget\" />
