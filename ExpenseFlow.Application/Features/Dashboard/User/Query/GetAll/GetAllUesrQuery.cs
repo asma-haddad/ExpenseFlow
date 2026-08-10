@@ -1,12 +1,11 @@
 ﻿using ExpenseFlow.Application.Abstraction;
 using ExpenseFlow.Domain.Base.Dto;
-using PaginationRequest = ExpenseFlow.Domain.Base.Dto.PaginationRequest;
 namespace ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll
 {
     public class GetAllUserQuery
     {
 
-        public class Request : PaginationRequest, IQuery<GetAllDataResponse<Response>>
+        public class Request : FilterRequest, IQuery<GetAllDataResponse<Response>>
         {
         }
 
