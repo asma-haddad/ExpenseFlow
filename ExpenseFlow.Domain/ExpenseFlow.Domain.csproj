@@ -21,7 +21,6 @@
 
 
   <ItemGroup Label="ZeeleadStyleFolders">
-    <Folder Include="Base\Dto\" />
     <Folder Include="Shared\Attribute\" />
     <Folder Include="Shared\Resources\" />
   </ItemGroup>

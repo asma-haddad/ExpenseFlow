@@ -1,4 +1,4 @@
-﻿using ExpenseFlow.Application.Dto;
+﻿using ExpenseFlow.Domain.Base.Dto;
 using ExpenseFlow.Domain.Base.Language;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;

@@ -1,4 +1,4 @@
-﻿namespace ExpenseFlow.Application.Dto
+﻿namespace ExpenseFlow.Domain.Base.Dto
 {
     public class PaginationRequest
     {
