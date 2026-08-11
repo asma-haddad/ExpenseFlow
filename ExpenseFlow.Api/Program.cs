@@ -8,6 +8,7 @@ using ExpenseFlow.Application.Services.Excel;
 using ExpenseFlow.Application.Services.File;
 using ExpenseFlow.Application.Services.Helper;
 using ExpenseFlow.Application.Services.Token;
+using ExpenseFlow.Domain.Base.Language;
 using ExpenseFlow.Infrastructure.Data;
 using ExpenseFlow.Infrastructure.Seeder;
 using Microsoft.AspNetCore.Localization;
@@ -19,6 +20,7 @@ using Serilog;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Globalization;
 using System.Linq.Dynamic.Core;
+using System.Linq.Dynamic.Core.CustomTypeProviders;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
@@ -54,9 +56,19 @@ builder.Services.AddScoped<IExcelImportService, ExcelImportService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
-builder.Services.AddSingleton(sp => new ParsingConfig
+builder.Services.AddSingleton(_ =>
 {
-    CustomTypeProvider = new DynamicLinqCustomTypeProvider(),
+    var parsingConfig = new ParsingConfig();
+
+    parsingConfig.CustomTypeProvider =
+        new DefaultDynamicLinqCustomTypeProvider(
+            parsingConfig,
+            new List<Type>
+            {
+                typeof(LanguagePropertyModelExtension)
+            });
+
+    return parsingConfig;
 });
 
 builder.Services.AddHttpClient();

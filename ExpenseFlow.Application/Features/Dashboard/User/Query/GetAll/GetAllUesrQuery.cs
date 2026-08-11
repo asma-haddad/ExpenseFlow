@@ -1,11 +1,12 @@
 ﻿using ExpenseFlow.Application.Abstraction;
 using ExpenseFlow.Domain.Base.Dto;
+using ExpenseFlow.Domain.Base.Language;
 namespace ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll
 {
     public class GetAllUserQuery
     {
 
-        public class Request : FilterRequest, IQuery<GetAllDataResponse<Response>>
+        public class Request : SearchRequest, IQuery<GetAllDataResponse<Response>>
         {
         }
 
@@ -18,7 +19,7 @@ namespace ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll
             public string LastName { get; set; }
             public string FirstName { get; set; }
             public bool ViewOnlyAssignedLeads { get; set; }
-
+            public LanguagePropertyDto City { get; set; }
             public RoleDto Role { get; set; }
 
             public class RoleDto
