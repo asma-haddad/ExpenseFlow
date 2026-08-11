@@ -1,9 +1,7 @@
 ﻿using ExpenseFlow.Application.Abstraction;
 using ExpenseFlow.Application.Extensions;
-using ExpenseFlow.Application.Services.Helper;
 using ExpenseFlow.Domain.Base;
 using ExpenseFlow.Domain.Base.Dto;
-using ExpenseFlow.Domain.Base.Language;
 using ExpenseFlow.Infrastructure.Data;
 using Microsoft.AspNetCore.Http;
 using System.Linq.Dynamic.Core;
@@ -21,12 +19,12 @@ namespace ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll
         {
             var result = new Result<GetAllDataResponse<GetAllUserQuery.Response>>();
 
-            var query = context.User.Where(p => request.Query == null || p.City.Search(request.Query));
+            var query = context.User/*.Where(p => request.Query == null || p.City.Search(request.Query))*/;
 
 
             if (request.Filters != null && request.Filters.Any())
             {
-                query = QueryFilterHelper.ApplyFilters(query, request.Filters, request.IsAnd, acceptLanguage, _dynamicLinqConfig);
+                // query = QueryFilterHelper.ApplyFilters(query, request.Filters, request.IsAnd, acceptLanguage, _dynamicLinqConfig);
             }
             //result.Data = await query
             //    .PaginateAsync(
@@ -53,7 +51,6 @@ namespace ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll
                         {
                             Id = u.RoleId
                         },
-                        City = u.City.ToDto(),
                     }, request);
 
             return result;

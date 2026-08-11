@@ -35,15 +35,18 @@ public class AppDbContext : DbContext
     #endregion
 
     protected override void OnModelCreating(
-        ModelBuilder modelBuilder)
+     ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        ApplyConfigurations(modelBuilder);
+        // LanguagePropertyModel ليس جدولًا.
+        modelBuilder.Ignore<LanguagePropertyModel>();
 
+        // يجب إعداد حقول اللغة قبل بقية الإعدادات.
         ApplyLanguagePropertyConfiguration(modelBuilder);
-        ApplyLanguageDatabaseFunctions(modelBuilder);
 
+        ApplyConfigurations(modelBuilder);
+        ApplyLanguageDatabaseFunctions(modelBuilder);
         ApplyIsValidQueryFilter(modelBuilder);
     }
 
@@ -64,12 +67,6 @@ public class AppDbContext : DbContext
             entity.Property(x => x.Email)
                 .HasMaxLength(255)
                 .IsRequired();
-
-            /*
-             * FirstName و LastName من نوع LanguagePropertyModel.
-             * لذلك لا نستخدم HasMaxLength معهما،
-             * وسيتم تخزينهما كـ jsonb.
-             */
 
             entity.Property(x => x.FirstName)
                 .IsRequired();
@@ -220,10 +217,10 @@ public class AppDbContext : DbContext
 
         foreach (var entityType in entityTypes)
         {
-            var languageProperties = entityType
-                .GetProperties()
+            var languageProperties = entityType.ClrType
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(property =>
-                    property.ClrType ==
+                    property.PropertyType ==
                     typeof(LanguagePropertyModel))
                 .ToList();
 
