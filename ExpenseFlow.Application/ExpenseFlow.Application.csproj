@@ -95,6 +95,5 @@
     <Folder Include="Services\Email\" />
     <Folder Include="Services\Excel\" />
     <Folder Include="Services\File\" />
-    <Folder Include="Services\Helper\" />
   </ItemGroup>
 </Project>

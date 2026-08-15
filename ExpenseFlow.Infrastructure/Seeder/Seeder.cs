@@ -3,7 +3,6 @@ using ExpenseFlow.Domain.Shared.Enum;
 using ExpenseFlow.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ExpenseFlow.Infrastructure.Seeder;
@@ -14,23 +13,12 @@ public static class Seeder
         RoleType RoleType,
         string Name);
 
-
     private static readonly RoleSeedDefinition[] RoleDefinitions =
     {
-        new(
-            RoleType.Employee, "Employee"),
-
-        new(
-            RoleType.Manager,
-            "Manager"),
-
-        new(
-            RoleType.Finance,
-            "Finance"),
-
-        new(
-            RoleType.Admin,
-            "Admin")
+        new(RoleType.Employee, "Employee"),
+        new(RoleType.Manager, "Manager"),
+        new(RoleType.Finance, "Finance"),
+        new(RoleType.Admin, "Admin")
     };
 
 
@@ -45,10 +33,6 @@ public static class Seeder
             scope.ServiceProvider
                 .GetRequiredService<AppDbContext>();
 
-        IConfiguration configuration =
-            scope.ServiceProvider
-                .GetRequiredService<IConfiguration>();
-
         ValidateRoles();
 
         await using var transaction =
@@ -62,13 +46,11 @@ public static class Seeder
                     db,
                     cancellationToken);
 
-
             Dictionary<PermissionType, PermissionModel>
                 permissions =
                     await SeedPermissionsAsync(
                         db,
                         cancellationToken);
-
 
             await SeedRolePermissionsAsync(
                 db,
@@ -76,13 +58,10 @@ public static class Seeder
                 permissions,
                 cancellationToken);
 
-
             await SeedAdminUserAsync(
                 db,
                 roles,
-                configuration,
                 cancellationToken);
-
 
             await transaction.CommitAsync(
                 cancellationToken);
@@ -101,10 +80,11 @@ public static class Seeder
     // Roles
     // =====================================================
 
-    private static async Task<Dictionary<RoleType, RoleModel>>
-    SeedRolesAsync(
-        AppDbContext db,
-        CancellationToken cancellationToken)
+    private static async Task<
+        Dictionary<RoleType, RoleModel>>
+        SeedRolesAsync(
+            AppDbContext db,
+            CancellationToken cancellationToken)
     {
         Dictionary<RoleType, RoleModel> roles =
             await db.Role
@@ -128,12 +108,8 @@ public static class Seeder
             var role = new RoleModel
             {
                 Id = Guid.NewGuid(),
-
-                RoleType =
-                    definition.RoleType,
-
-                Name =
-                    definition.Name
+                RoleType = definition.RoleType,
+                Name = definition.Name
             };
 
             db.Role.Add(role);
@@ -168,17 +144,14 @@ public static class Seeder
                             permission.Code,
                         cancellationToken);
 
-
         PermissionType[] permissionTypes =
             Enum.GetValues<PermissionType>();
-
 
         foreach (PermissionType permissionType
                  in permissionTypes)
         {
             string permissionName =
                 permissionType.ToString();
-
 
             if (permissions.TryGetValue(
                     permissionType,
@@ -190,34 +163,23 @@ public static class Seeder
                 continue;
             }
 
-
             var permission =
                 new PermissionModel
                 {
-                    Id =
-                        Guid.NewGuid(),
-
-                    Code =
-                        permissionType,
-
-                    Name =
-                        permissionName
+                    Id = Guid.NewGuid(),
+                    Code = permissionType,
+                    Name = permissionName
                 };
 
-
-            db.Permission.Add(
-                permission);
-
+            db.Permission.Add(permission);
 
             permissions.Add(
                 permissionType,
                 permission);
         }
 
-
         await db.SaveChangesAsync(
             cancellationToken);
-
 
         return permissions;
     }
@@ -240,32 +202,33 @@ public static class Seeder
             PermissionType[]> rolePermissionMap =
                 CreateRolePermissionMap();
 
-
-        List<PermissionRoleModel> existingLinks =
+        var existingLinkData =
             await db.RolePermission
+                .AsNoTracking()
+                .Select(link => new
+                {
+                    link.RoleId,
+                    link.PermissionId
+                })
                 .ToListAsync(
                     cancellationToken);
 
-
         HashSet<(Guid RoleId, Guid PermissionId)>
             existingLinkSet =
-                existingLinks
+                existingLinkData
                     .Select(link => (
                         link.RoleId,
                         link.PermissionId))
                     .ToHashSet();
 
-
         List<PermissionRoleModel> newLinks =
             new();
-
 
         foreach (var roleEntry
                  in rolePermissionMap)
         {
             RoleModel role =
                 roles[roleEntry.Key];
-
 
             foreach (PermissionType permissionType
                      in roleEntry.Value.Distinct())
@@ -278,45 +241,35 @@ public static class Seeder
                         $"Permission '{permissionType}' was not found.");
                 }
 
-
                 var linkKey =
                     (
                         RoleId: role.Id,
                         PermissionId: permission.Id
                     );
 
-
-                if (!existingLinkSet.Add(
-                        linkKey))
+                if (!existingLinkSet.Add(linkKey))
                 {
                     continue;
                 }
 
-
                 newLinks.Add(
                     new PermissionRoleModel
                     {
-                        RoleId =
-                            role.Id,
-
-                        PermissionId =
-                            permission.Id
+                        RoleId = role.Id,
+                        PermissionId = permission.Id
                     });
             }
         }
-
 
         if (newLinks.Count == 0)
         {
             return;
         }
 
-
         await db.RolePermission
             .AddRangeAsync(
                 newLinks,
                 cancellationToken);
-
 
         await db.SaveChangesAsync(
             cancellationToken);
@@ -340,16 +293,13 @@ public static class Seeder
                 PermissionGroups
                     .GetEmployeePermissions(),
 
-
             [RoleType.Manager] =
                 PermissionGroups
                     .GetManagerPermissions(),
 
-
             [RoleType.Finance] =
                 PermissionGroups
                     .GetFinancePermissions(),
-
 
             [RoleType.Admin] =
                 PermissionGroups
@@ -367,13 +317,13 @@ public static class Seeder
         IReadOnlyDictionary<
             RoleType,
             RoleModel> roles,
-        IConfiguration configuration,
         CancellationToken cancellationToken)
     {
-        string adminEmail =
-            configuration["Seed:AdminEmail"]
-            ?? "admin@expenseflow.local";
+        const string adminEmail =
+            "admin@expenseflow.local";
 
+        const string adminPassword =
+            "Admin@123";
 
         bool adminExists =
             await db.User
@@ -382,67 +332,40 @@ public static class Seeder
                         user.Email == adminEmail,
                     cancellationToken);
 
-
         if (adminExists)
         {
             return;
         }
 
-
-        string? adminPassword =
-            configuration[
-                "Seed:AdminPassword"];
-
-
-        if (string.IsNullOrWhiteSpace(
-                adminPassword))
-        {
-            throw new InvalidOperationException(
-                "Seed:AdminPassword is not configured.");
-        }
-
-
         RoleModel adminRole =
             roles[RoleType.Admin];
-
 
         var adminUser =
             new UserModel
             {
-                Id =
-                    Guid.NewGuid(),
+                Id = Guid.NewGuid(),
 
-                FirstName =
-                    "System",
+                FirstName = "System",
+                LastName = "Admin",
 
-                LastName =
-                    "Admin",
+                Email = adminEmail,
 
-                Email =
-                    adminEmail,
+                RoleId = adminRole.Id,
 
-                RoleId =
-                    adminRole.Id,
-
-                IsActive =
-                    true
+                IsActive = true
             };
-
 
         var passwordHasher =
             new PasswordHasher<UserModel>();
 
-
-        //adminUser.PasswordHash =
-        passwordHasher.HashPassword(
-            adminUser,
-            adminPassword);
-
+        adminUser.PasswordHash =
+            passwordHasher.HashPassword(
+                adminUser,
+                adminPassword);
 
         await db.User.AddAsync(
             adminUser,
             cancellationToken);
-
 
         await db.SaveChangesAsync(
             cancellationToken);
@@ -461,7 +384,6 @@ public static class Seeder
                     definition.RoleType)
                 .ToArray();
 
-
         RoleType[] duplicateRoles =
             definedRoles
                 .GroupBy(roleType =>
@@ -472,7 +394,6 @@ public static class Seeder
                     group.Key)
                 .ToArray();
 
-
         if (duplicateRoles.Length > 0)
         {
             throw new InvalidOperationException(
@@ -482,13 +403,11 @@ public static class Seeder
                     duplicateRoles));
         }
 
-
         RoleType[] missingRoles =
             Enum.GetValues<RoleType>()
                 .Except(
                     definedRoles)
                 .ToArray();
-
 
         if (missingRoles.Length > 0)
         {
