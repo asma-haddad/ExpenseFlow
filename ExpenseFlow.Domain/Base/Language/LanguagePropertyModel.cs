@@ -17,5 +17,10 @@ namespace ExpenseFlow.Domain.Base.Language
         {
             return JsonConvert.SerializeObject(this);
         }
+
+        public static implicit operator string(LanguagePropertyModel v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

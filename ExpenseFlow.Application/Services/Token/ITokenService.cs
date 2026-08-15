@@ -1,8 +1,8 @@
-using ExpenseFlow.Domain.Model.User;
-
 namespace ExpenseFlow.Application.Services.Token;
 
 public interface ITokenService
 {
-    string GenerateToken(UserModel user, IEnumerable<string> permissions);
+    Task<TokenDto> IssueTokensAsync(Guid userId, string? ip, string? userAgent, bool isDevice);
+    Task<TokenDto> RefreshAsync(string refreshToken, string? ip, string? userAgent, bool isDevice);
+    Task RevokeAsync(string refreshToken, string? ip, string? reason = null);
 }

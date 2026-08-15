@@ -33,6 +33,5 @@
 
   <ItemGroup Label="ZeeleadStyleFolders">
     <Folder Include="Data\" />
-    <Folder Include="Seeder\" />
   </ItemGroup>
 </Project>

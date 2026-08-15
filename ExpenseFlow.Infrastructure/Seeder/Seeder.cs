@@ -1,90 +1,491 @@
+using ExpenseFlow.Domain.Base.Language;
 using ExpenseFlow.Domain.Model.User;
+using ExpenseFlow.Domain.Shared.Enum;
 using ExpenseFlow.Infrastructure.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Security.Cryptography;
 
 namespace ExpenseFlow.Infrastructure.Seeder;
 
 public static class Seeder
 {
-    public static async Task SeedData(IServiceProvider services)
+    private sealed record RoleSeedDefinition(
+        RoleType RoleType,
+        string EnglishName,
+        string ArabicName);
+
+
+    private static readonly RoleSeedDefinition[] RoleDefinitions =
     {
-        var db = services.GetRequiredService<AppDbContext>();
+        new(
+            RoleType.Employee,
+            "Employee",
+            "موظف"),
 
-        var adminRole = await db.Role.FirstOrDefaultAsync(x => x.Name == "Admin");
-        if (adminRole == null)
+        new(
+            RoleType.Manager,
+            "Manager",
+            "مدير"),
+
+        new(
+            RoleType.Finance,
+            "Finance",
+            "مالية"),
+
+        new(
+            RoleType.Admin,
+            "Admin",
+            "مدير النظام")
+    };
+
+
+    public static async Task SeedData(
+        IServiceProvider services,
+        CancellationToken cancellationToken = default)
+    {
+        using IServiceScope scope =
+            services.CreateScope();
+
+        AppDbContext db =
+            scope.ServiceProvider
+                .GetRequiredService<AppDbContext>();
+
+        IConfiguration configuration =
+            scope.ServiceProvider
+                .GetRequiredService<IConfiguration>();
+
+        ValidateRoles();
+
+        await using var transaction =
+            await db.Database.BeginTransactionAsync(
+                cancellationToken);
+
+        try
         {
-            adminRole = new Role { Name = "Admin" };
-            db.Role.Add(adminRole);
-            await db.SaveChangesAsync();
+            Dictionary<RoleType, RoleModel> roles =
+                await SeedRolesAsync(
+                    db,
+                    cancellationToken);
+
+            Dictionary<PermissionType, PermissionModel>
+                permissions =
+                    await SeedPermissionsAsync(
+                        db,
+                        cancellationToken);
+
+            await SeedRolePermissionsAsync(
+                db,
+                roles,
+                permissions,
+                cancellationToken);
+
+            await SeedAdminUserAsync(
+                db,
+                roles,
+                configuration,
+                cancellationToken);
+
+            await transaction.CommitAsync(
+                cancellationToken);
         }
-
-        var permissionNames = new[]
+        catch
         {
-            "users.read",
-            "users.create",
-            "users.update",
-            "users.delete",
-            "roles.manage",
-            "permissions.manage"
-        };
+            await transaction.RollbackAsync(
+                cancellationToken);
 
-        foreach (var name in permissionNames)
-        {
-            if (!await db.Permission.AnyAsync(x => x.Name == name))
-                db.Permission.Add(new Permission { Name = name });
+            throw;
         }
+    }
 
-        await db.SaveChangesAsync();
 
-        var permissions = await db.RolePermission.ToListAsync();
-        foreach (var permission in permissions)
+    private static async Task<
+        Dictionary<RoleType, RoleModel>>
+        SeedRolesAsync(
+            AppDbContext db,
+            CancellationToken cancellationToken)
+    {
+        Dictionary<RoleType, RoleModel> roles =
+            await db.Role
+                .ToDictionaryAsync(
+                    x => x.RoleType,
+                    cancellationToken);
+
+        foreach (RoleSeedDefinition definition
+                 in RoleDefinitions)
         {
-            var exists = await db.RolePermission.AnyAsync(x =>
-                x.RoleId == adminRole.Id && x.PermissionId == permission.Id);
-
-            if (!exists)
-            {
-                db.RolePermission.Add(new RolePermission
+            LanguagePropertyModel name =
+                new()
                 {
-                    RoleId = adminRole.Id,
-                    PermissionId = permission.Id
-                });
+                    ["en"] = definition.EnglishName,
+                    ["ar"] = definition.ArabicName
+                };
+
+            if (roles.TryGetValue(
+                    definition.RoleType,
+                    out RoleModel? existingRole))
+            {
+                existingRole.Name = name;
+                continue;
+            }
+
+            var role = new RoleModel
+            {
+                Id = Guid.NewGuid(),
+
+                RoleType = definition.RoleType,
+
+                Name = name
+            };
+
+            db.Role.Add(role);
+
+            roles.Add(
+                definition.RoleType,
+                role);
+        }
+
+        await db.SaveChangesAsync(
+            cancellationToken);
+
+        return roles;
+    }
+
+
+    private static async Task<
+        Dictionary<PermissionType, PermissionModel>>
+        SeedPermissionsAsync(
+            AppDbContext db,
+            CancellationToken cancellationToken)
+    {
+        Dictionary<PermissionType, PermissionModel>
+            permissions =
+                await db.Permission
+                    .ToDictionaryAsync(
+                        x => x.Code,
+                        cancellationToken);
+
+        foreach (PermissionType permissionType in Enum.GetValues<PermissionType>())
+        {
+            string permissionName = permissionType.ToString();
+
+            if (permissions.TryGetValue(
+                    permissionType,
+                    out PermissionModel? existingPermission))
+            {
+                existingPermission.Name =
+                    permissionName;
+
+                continue;
+            }
+
+            var permission =
+                new PermissionModel
+                {
+                    Id = Guid.NewGuid(),
+
+                    Code = permissionType,
+
+                    Name = permissionName
+                };
+
+            db.Permission.Add(permission);
+
+            permissions.Add(
+                permissionType,
+                permission);
+        }
+
+        await db.SaveChangesAsync(
+            cancellationToken);
+
+        return permissions;
+    }
+
+
+    private static async Task SeedRolePermissionsAsync(
+        AppDbContext db,
+        IReadOnlyDictionary<RoleType, RoleModel> roles,
+        IReadOnlyDictionary<
+            PermissionType,
+            PermissionModel> permissions,
+        CancellationToken cancellationToken)
+    {
+        Dictionary<
+            RoleType,
+            PermissionType[]> rolePermissionMap =
+                CreateRolePermissionMap();
+
+
+        var existingData =
+            await db.RolePermission
+                .AsNoTracking()
+                .Select(x => new
+                {
+                    x.RoleId,
+                    x.PermissionId
+                })
+                .ToListAsync(
+                    cancellationToken);
+
+
+        HashSet<(Guid RoleId, Guid PermissionId)>
+            existingLinks =
+                existingData
+                    .Select(x => (
+                        x.RoleId,
+                        x.PermissionId))
+                    .ToHashSet();
+
+
+        List<PermissionRoleModel> newLinks =
+            new();
+
+
+        foreach (var roleEntry
+                 in rolePermissionMap)
+        {
+            RoleModel role =
+                roles[roleEntry.Key];
+
+
+            foreach (PermissionType permissionType
+                     in roleEntry.Value.Distinct())
+            {
+                PermissionModel permission =
+                    permissions[permissionType];
+
+
+                var key =
+                    (
+                        role.Id,
+                        permission.Id
+                    );
+
+
+                if (!existingLinks.Add(key))
+                {
+                    continue;
+                }
+
+
+                newLinks.Add(
+                    new PermissionRoleModel
+                    {
+                        RoleId =
+                            role.Id,
+
+                        PermissionId =
+                            permission.Id
+                    });
             }
         }
 
-        var adminEmail = "admin@expenseflow.local";
-        if (!await db.User.AnyAsync(x => x.Email == adminEmail))
+
+        if (newLinks.Count == 0)
         {
-            db.User.Add(new UserModel
-            {
-                FirstName = "System",
-                LastName = "Admin",
-                Email = adminEmail,
-                PasswordHash = HashPassword("ChangeMe123!"),
-                RoleId = adminRole.Id,
-                IsActive = true
-            });
+            return;
         }
 
-        await db.SaveChangesAsync();
+
+        await db.RolePermission.AddRangeAsync(
+            newLinks,
+            cancellationToken);
+
+        await db.SaveChangesAsync(
+            cancellationToken);
     }
 
-    private static string HashPassword(string password)
+
+    private static Dictionary<
+        RoleType,
+        PermissionType[]> CreateRolePermissionMap()
     {
-        const int saltSize = 16;
-        const int keySize = 32;
-        const int iterations = 100000;
+        PermissionType[] employeePermissions =
+        {
+            PermissionType.ExpenseViewOwn,
+            PermissionType.ExpenseCreate,
+            PermissionType.ExpenseEditOwnDraft,
+            PermissionType.ExpenseDeleteOwnDraft,
+            PermissionType.ExpenseSubmit
+        };
 
-        var salt = RandomNumberGenerator.GetBytes(saltSize);
-        var key = Rfc2898DeriveBytes.Pbkdf2(
-            password,
-            salt,
-            iterations,
-            HashAlgorithmName.SHA256,
-            keySize);
 
-        return $"{iterations}.{Convert.ToBase64String(salt)}.{Convert.ToBase64String(key)}";
+        PermissionType[] managerOnlyPermissions =
+        {
+            PermissionType.ExpenseViewDepartment,
+            PermissionType.ExpenseApprove,
+            PermissionType.ExpenseReject
+        };
+
+
+        PermissionType[] financeOnlyPermissions =
+        {
+            PermissionType.ExpenseViewApproved,
+            PermissionType.ExpenseMarkAsPaid,
+            PermissionType.ExpenseViewReports
+        };
+
+
+        PermissionType[] managerPermissions =
+            employeePermissions
+                .Concat(managerOnlyPermissions)
+                .Distinct()
+                .ToArray();
+
+
+        PermissionType[] financePermissions =
+            employeePermissions
+                .Concat(financeOnlyPermissions)
+                .Distinct()
+                .ToArray();
+
+
+        PermissionType[] adminPermissions =
+            Enum.GetValues<PermissionType>();
+
+
+        return new Dictionary<
+            RoleType,
+            PermissionType[]>
+        {
+            [RoleType.Employee] =
+                employeePermissions,
+
+            [RoleType.Manager] =
+                managerPermissions,
+
+            [RoleType.Finance] =
+                financePermissions,
+
+            [RoleType.Admin] =
+                adminPermissions
+        };
+    }
+
+
+    private static async Task SeedAdminUserAsync(
+        AppDbContext db,
+        IReadOnlyDictionary<
+            RoleType,
+            RoleModel> roles,
+        IConfiguration configuration,
+        CancellationToken cancellationToken)
+    {
+        string adminEmail =
+            configuration["Seed:AdminEmail"]
+            ?? "admin@expenseflow.local";
+
+
+        bool exists =
+            await db.User.AnyAsync(
+                x => x.Email == adminEmail,
+                cancellationToken);
+
+
+        if (exists)
+        {
+            return;
+        }
+
+
+        string? adminPassword =
+            configuration["Seed:AdminPassword"];
+
+
+        if (string.IsNullOrWhiteSpace(
+                adminPassword))
+        {
+            throw new InvalidOperationException(
+                "Seed:AdminPassword is not configured.");
+        }
+
+
+        RoleModel adminRole =
+            roles[RoleType.Admin];
+
+
+        var adminUser =
+            new UserModel
+            {
+                Id = Guid.NewGuid(),
+
+                FirstName =
+                    "System",
+
+                LastName =
+                    "Admin",
+
+                Email =
+                    adminEmail,
+
+                RoleId =
+                    adminRole.Id,
+
+                IsActive =
+                    true
+            };
+
+
+        var passwordHasher =
+            new PasswordHasher<UserModel>();
+
+
+        // adminUser.PasswordHash =
+        passwordHasher.HashPassword(
+            adminUser,
+            adminPassword);
+
+
+        await db.User.AddAsync(
+            adminUser,
+            cancellationToken);
+
+        await db.SaveChangesAsync(
+            cancellationToken);
+    }
+
+
+    private static void ValidateRoles()
+    {
+        RoleType[] definedRoles =
+            RoleDefinitions
+                .Select(x => x.RoleType)
+                .ToArray();
+
+
+        RoleType[] duplicateRoles =
+            definedRoles
+                .GroupBy(x => x)
+                .Where(x => x.Count() > 1)
+                .Select(x => x.Key)
+                .ToArray();
+
+
+        if (duplicateRoles.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "Duplicated role definitions: " +
+                string.Join(
+                    ", ",
+                    duplicateRoles));
+        }
+
+
+        RoleType[] missingRoles =
+            Enum.GetValues<RoleType>()
+                .Except(definedRoles)
+                .ToArray();
+
+
+        if (missingRoles.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "Missing role definitions: " +
+                string.Join(
+                    ", ",
+                    missingRoles));
+        }
     }
 }

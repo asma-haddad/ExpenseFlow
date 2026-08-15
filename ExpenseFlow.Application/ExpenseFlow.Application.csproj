@@ -96,6 +96,5 @@
     <Folder Include="Services\Excel\" />
     <Folder Include="Services\File\" />
     <Folder Include="Services\Helper\" />
-    <Folder Include="Services\Token\" />
   </ItemGroup>
 </Project>
