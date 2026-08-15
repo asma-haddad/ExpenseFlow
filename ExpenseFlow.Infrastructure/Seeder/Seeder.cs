@@ -1,4 +1,3 @@
-using ExpenseFlow.Domain.Base.Language;
 using ExpenseFlow.Domain.Model.User;
 using ExpenseFlow.Domain.Shared.Enum;
 using ExpenseFlow.Infrastructure.Data;
@@ -13,31 +12,25 @@ public static class Seeder
 {
     private sealed record RoleSeedDefinition(
         RoleType RoleType,
-        string EnglishName,
-        string ArabicName);
+        string Name);
 
 
     private static readonly RoleSeedDefinition[] RoleDefinitions =
     {
         new(
-            RoleType.Employee,
-            "Employee",
-            "موظف"),
+            RoleType.Employee, "Employee"),
 
         new(
             RoleType.Manager,
-            "Manager",
-            "مدير"),
+            "Manager"),
 
         new(
             RoleType.Finance,
-            "Finance",
-            "مالية"),
+            "Finance"),
 
         new(
             RoleType.Admin,
-            "Admin",
-            "مدير النظام")
+            "Admin")
     };
 
 
@@ -69,11 +62,13 @@ public static class Seeder
                     db,
                     cancellationToken);
 
+
             Dictionary<PermissionType, PermissionModel>
                 permissions =
                     await SeedPermissionsAsync(
                         db,
                         cancellationToken);
+
 
             await SeedRolePermissionsAsync(
                 db,
@@ -81,11 +76,13 @@ public static class Seeder
                 permissions,
                 cancellationToken);
 
+
             await SeedAdminUserAsync(
                 db,
                 roles,
                 configuration,
                 cancellationToken);
+
 
             await transaction.CommitAsync(
                 cancellationToken);
@@ -100,33 +97,31 @@ public static class Seeder
     }
 
 
-    private static async Task<
-        Dictionary<RoleType, RoleModel>>
-        SeedRolesAsync(
-            AppDbContext db,
-            CancellationToken cancellationToken)
+    // =====================================================
+    // Roles
+    // =====================================================
+
+    private static async Task<Dictionary<RoleType, RoleModel>>
+    SeedRolesAsync(
+        AppDbContext db,
+        CancellationToken cancellationToken)
     {
         Dictionary<RoleType, RoleModel> roles =
             await db.Role
                 .ToDictionaryAsync(
-                    x => x.RoleType,
+                    role => role.RoleType,
                     cancellationToken);
 
         foreach (RoleSeedDefinition definition
                  in RoleDefinitions)
         {
-            LanguagePropertyModel name =
-                new()
-                {
-                    ["en"] = definition.EnglishName,
-                    ["ar"] = definition.ArabicName
-                };
-
             if (roles.TryGetValue(
                     definition.RoleType,
                     out RoleModel? existingRole))
             {
-                existingRole.Name = name;
+                existingRole.Name =
+                    definition.Name;
+
                 continue;
             }
 
@@ -134,9 +129,11 @@ public static class Seeder
             {
                 Id = Guid.NewGuid(),
 
-                RoleType = definition.RoleType,
+                RoleType =
+                    definition.RoleType,
 
-                Name = name
+                Name =
+                    definition.Name
             };
 
             db.Role.Add(role);
@@ -153,6 +150,10 @@ public static class Seeder
     }
 
 
+    // =====================================================
+    // Permissions
+    // =====================================================
+
     private static async Task<
         Dictionary<PermissionType, PermissionModel>>
         SeedPermissionsAsync(
@@ -163,12 +164,21 @@ public static class Seeder
             permissions =
                 await db.Permission
                     .ToDictionaryAsync(
-                        x => x.Code,
+                        permission =>
+                            permission.Code,
                         cancellationToken);
 
-        foreach (PermissionType permissionType in Enum.GetValues<PermissionType>())
+
+        PermissionType[] permissionTypes =
+            Enum.GetValues<PermissionType>();
+
+
+        foreach (PermissionType permissionType
+                 in permissionTypes)
         {
-            string permissionName = permissionType.ToString();
+            string permissionName =
+                permissionType.ToString();
+
 
             if (permissions.TryGetValue(
                     permissionType,
@@ -180,29 +190,42 @@ public static class Seeder
                 continue;
             }
 
+
             var permission =
                 new PermissionModel
                 {
-                    Id = Guid.NewGuid(),
+                    Id =
+                        Guid.NewGuid(),
 
-                    Code = permissionType,
+                    Code =
+                        permissionType,
 
-                    Name = permissionName
+                    Name =
+                        permissionName
                 };
 
-            db.Permission.Add(permission);
+
+            db.Permission.Add(
+                permission);
+
 
             permissions.Add(
                 permissionType,
                 permission);
         }
 
+
         await db.SaveChangesAsync(
             cancellationToken);
+
 
         return permissions;
     }
 
+
+    // =====================================================
+    // Role - Permission
+    // =====================================================
 
     private static async Task SeedRolePermissionsAsync(
         AppDbContext db,
@@ -218,24 +241,18 @@ public static class Seeder
                 CreateRolePermissionMap();
 
 
-        var existingData =
+        List<PermissionRoleModel> existingLinks =
             await db.RolePermission
-                .AsNoTracking()
-                .Select(x => new
-                {
-                    x.RoleId,
-                    x.PermissionId
-                })
                 .ToListAsync(
                     cancellationToken);
 
 
         HashSet<(Guid RoleId, Guid PermissionId)>
-            existingLinks =
-                existingData
-                    .Select(x => (
-                        x.RoleId,
-                        x.PermissionId))
+            existingLinkSet =
+                existingLinks
+                    .Select(link => (
+                        link.RoleId,
+                        link.PermissionId))
                     .ToHashSet();
 
 
@@ -253,18 +270,24 @@ public static class Seeder
             foreach (PermissionType permissionType
                      in roleEntry.Value.Distinct())
             {
-                PermissionModel permission =
-                    permissions[permissionType];
+                if (!permissions.TryGetValue(
+                        permissionType,
+                        out PermissionModel? permission))
+                {
+                    throw new InvalidOperationException(
+                        $"Permission '{permissionType}' was not found.");
+                }
 
 
-                var key =
+                var linkKey =
                     (
-                        role.Id,
-                        permission.Id
+                        RoleId: role.Id,
+                        PermissionId: permission.Id
                     );
 
 
-                if (!existingLinks.Add(key))
+                if (!existingLinkSet.Add(
+                        linkKey))
                 {
                     continue;
                 }
@@ -289,81 +312,55 @@ public static class Seeder
         }
 
 
-        await db.RolePermission.AddRangeAsync(
-            newLinks,
-            cancellationToken);
+        await db.RolePermission
+            .AddRangeAsync(
+                newLinks,
+                cancellationToken);
+
 
         await db.SaveChangesAsync(
             cancellationToken);
     }
 
 
+    // =====================================================
+    // Role Permission Map
+    // =====================================================
+
     private static Dictionary<
         RoleType,
-        PermissionType[]> CreateRolePermissionMap()
+        PermissionType[]>
+        CreateRolePermissionMap()
     {
-        PermissionType[] employeePermissions =
-        {
-            PermissionType.ExpenseViewOwn,
-            PermissionType.ExpenseCreate,
-            PermissionType.ExpenseEditOwnDraft,
-            PermissionType.ExpenseDeleteOwnDraft,
-            PermissionType.ExpenseSubmit
-        };
-
-
-        PermissionType[] managerOnlyPermissions =
-        {
-            PermissionType.ExpenseViewDepartment,
-            PermissionType.ExpenseApprove,
-            PermissionType.ExpenseReject
-        };
-
-
-        PermissionType[] financeOnlyPermissions =
-        {
-            PermissionType.ExpenseViewApproved,
-            PermissionType.ExpenseMarkAsPaid,
-            PermissionType.ExpenseViewReports
-        };
-
-
-        PermissionType[] managerPermissions =
-            employeePermissions
-                .Concat(managerOnlyPermissions)
-                .Distinct()
-                .ToArray();
-
-
-        PermissionType[] financePermissions =
-            employeePermissions
-                .Concat(financeOnlyPermissions)
-                .Distinct()
-                .ToArray();
-
-
-        PermissionType[] adminPermissions =
-            Enum.GetValues<PermissionType>();
-
-
         return new Dictionary<
             RoleType,
             PermissionType[]>
         {
             [RoleType.Employee] =
-                employeePermissions,
+                PermissionGroups
+                    .GetEmployeePermissions(),
+
 
             [RoleType.Manager] =
-                managerPermissions,
+                PermissionGroups
+                    .GetManagerPermissions(),
+
 
             [RoleType.Finance] =
-                financePermissions,
+                PermissionGroups
+                    .GetFinancePermissions(),
+
 
             [RoleType.Admin] =
-                adminPermissions
+                PermissionGroups
+                    .GetAdminPermissions()
         };
     }
 
+
+    // =====================================================
+    // Admin User
+    // =====================================================
 
     private static async Task SeedAdminUserAsync(
         AppDbContext db,
@@ -378,20 +375,23 @@ public static class Seeder
             ?? "admin@expenseflow.local";
 
 
-        bool exists =
-            await db.User.AnyAsync(
-                x => x.Email == adminEmail,
-                cancellationToken);
+        bool adminExists =
+            await db.User
+                .AnyAsync(
+                    user =>
+                        user.Email == adminEmail,
+                    cancellationToken);
 
 
-        if (exists)
+        if (adminExists)
         {
             return;
         }
 
 
         string? adminPassword =
-            configuration["Seed:AdminPassword"];
+            configuration[
+                "Seed:AdminPassword"];
 
 
         if (string.IsNullOrWhiteSpace(
@@ -409,7 +409,8 @@ public static class Seeder
         var adminUser =
             new UserModel
             {
-                Id = Guid.NewGuid(),
+                Id =
+                    Guid.NewGuid(),
 
                 FirstName =
                     "System",
@@ -432,7 +433,7 @@ public static class Seeder
             new PasswordHasher<UserModel>();
 
 
-        // adminUser.PasswordHash =
+        //adminUser.PasswordHash =
         passwordHasher.HashPassword(
             adminUser,
             adminPassword);
@@ -442,24 +443,33 @@ public static class Seeder
             adminUser,
             cancellationToken);
 
+
         await db.SaveChangesAsync(
             cancellationToken);
     }
 
 
+    // =====================================================
+    // Validation
+    // =====================================================
+
     private static void ValidateRoles()
     {
         RoleType[] definedRoles =
             RoleDefinitions
-                .Select(x => x.RoleType)
+                .Select(definition =>
+                    definition.RoleType)
                 .ToArray();
 
 
         RoleType[] duplicateRoles =
             definedRoles
-                .GroupBy(x => x)
-                .Where(x => x.Count() > 1)
-                .Select(x => x.Key)
+                .GroupBy(roleType =>
+                    roleType)
+                .Where(group =>
+                    group.Count() > 1)
+                .Select(group =>
+                    group.Key)
                 .ToArray();
 
 
@@ -475,7 +485,8 @@ public static class Seeder
 
         RoleType[] missingRoles =
             Enum.GetValues<RoleType>()
-                .Except(definedRoles)
+                .Except(
+                    definedRoles)
                 .ToArray();
 
 

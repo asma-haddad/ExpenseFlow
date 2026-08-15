@@ -4,8 +4,9 @@ namespace ExpenseFlow.Infrastructure.Seeder
 {
     public static class PermissionGroups
     {
+        // Employee Permissions
         public static readonly PermissionType[] Employee =
-  {
+        {
         PermissionType.ExpenseViewOwn,
         PermissionType.ExpenseCreate,
         PermissionType.ExpenseEditOwnDraft,
@@ -14,6 +15,7 @@ namespace ExpenseFlow.Infrastructure.Seeder
     };
 
 
+        // Manager-only Permissions
         public static readonly PermissionType[] Manager =
         {
         PermissionType.ExpenseViewDepartment,
@@ -22,6 +24,7 @@ namespace ExpenseFlow.Infrastructure.Seeder
     };
 
 
+        // Finance-only Permissions
         public static readonly PermissionType[] Finance =
         {
         PermissionType.ExpenseViewApproved,
@@ -30,15 +33,10 @@ namespace ExpenseFlow.Infrastructure.Seeder
     };
 
 
-        public static readonly PermissionType[] Admin =
+        public static PermissionType[] GetEmployeePermissions()
         {
-        PermissionType.UserManage,
-        PermissionType.RoleManage,
-        PermissionType.PermissionManage,
-        PermissionType.DepartmentManage,
-        PermissionType.ExpenseCategoryManage,
-        PermissionType.SystemSettingManage
-    };
+            return Employee;
+        }
 
 
         public static PermissionType[] GetManagerPermissions()
@@ -63,6 +61,5 @@ namespace ExpenseFlow.Infrastructure.Seeder
         {
             return Enum.GetValues<PermissionType>();
         }
-
     }
 }
