@@ -25,6 +25,7 @@ namespace ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll
             public class RoleDto
             {
                 public Guid Id { get; set; }
+                public string Name { get; set; }
             }
         }
     }

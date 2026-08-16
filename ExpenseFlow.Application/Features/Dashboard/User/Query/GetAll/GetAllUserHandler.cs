@@ -49,7 +49,8 @@ namespace ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll
                         FirstName = u.FirstName,
                         Role = new GetAllUserQuery.Response.RoleDto
                         {
-                            Id = u.RoleId
+                            Id = u.RoleId,
+                            Name = u.Role.Name
                         },
                     }, request);
 
