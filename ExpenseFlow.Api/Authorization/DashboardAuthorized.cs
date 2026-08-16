@@ -3,52 +3,64 @@ using ExpenseFlow.Domain.Shared.Enum;
 using ExpenseFlow.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace ExpenseFlow.Api.Authorization
+namespace ExpenseFlow.Api.Authorization;
+
+public class DashboardAuthorized
+    : AuthorizeAttribute, IAuthorizationFilter
 {
-    public abstract class DashboardAuthorized : AuthorizeAttribute, IAuthorizationFilter
+    private readonly PermissionType _permission;
+
+    public DashboardAuthorized(PermissionType permission)
     {
-        private string permission;
-        public DashboardAuthorized(string permission)
-        {
-            this.permission = permission;
-        }
-        public void OnAuthorization(AuthorizationFilterContext context)
-        {
-            var _context = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-            string token = context.HttpContext.Request.Headers.Authorization.ToString().Split(" ")[1];
-
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
-            string role = jsonToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-            string user = jsonToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            string email = jsonToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-
-            if (!Guid.TryParse(user, out var userId))
-                throw new UnAuthorizedException(ErrorMessages.UnAuthenticated.ToString());
-
-            if (!Guid.TryParse(role, out Guid roleId))
-                throw new UnAuthorizedException(ErrorMessages.UnAuthenticated.ToString());
-
-            var sessionExists = _context.Session.Any(s => s.RefId == userId);
-            if (!sessionExists)
-                throw new UnAuthorizedException(ErrorMessages.UnAuthenticated.ToString());
-
-            bool hasPermission = false;
-            if (_context.User.Any(u => u.Id == userId))
-                hasPermission = _context.User
-                   .Where(c => c.Id == userId && c.RoleId == roleId)
-                   .SelectMany(c => c.Role.RolePermissions)
-                   .Select(p => p.Permission.Name)
-                   .AsEnumerable()
-                   .Any(name => name.Contains(permission));
-
-
-            //if (!hasPermission)
-            //    throw new ForbiddenException(ErrorMessages.Forbidden.ToString());
-        }
+        _permission = permission;
     }
 
+    public void OnAuthorization(
+        AuthorizationFilterContext context)
+    {
+        var db =
+            context.HttpContext
+                .RequestServices
+                .GetRequiredService<AppDbContext>();
+
+        string? userClaim =
+            context.HttpContext.User
+                .FindFirstValue(
+                    ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(
+                userClaim,
+                out Guid userId))
+        {
+            throw new UnAuthorizedException(
+                ErrorMessages.UnAuthenticated.ToString());
+        }
+
+        bool sessionExists =
+            db.Session.Any(
+                session =>
+                    session.RefId == userId);
+
+        if (!sessionExists)
+        {
+            throw new UnAuthorizedException(
+                ErrorMessages.UnAuthenticated.ToString());
+        }
+
+        bool hasPermission =
+            db.User.Any(user =>
+                user.Id == userId &&
+                user.Role.RolePermissions.Any(
+                    rolePermission =>
+                        rolePermission.Permission.Code
+                        == _permission));
+
+        if (!hasPermission)
+        {
+            throw new ForbiddenException(
+                ErrorMessages.Forbidden.ToString());
+        }
+    }
 }

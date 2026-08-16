@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
+using ExpenseFlow.Api.Authorization;
+using ExpenseFlow.Domain.Shared.Enum;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ExpenseFlow.Api.Controllers.ExpenseFlow;
@@ -8,7 +9,7 @@ namespace ExpenseFlow.Api.Controllers.ExpenseFlow;
 public class HealthController : ControllerBase
 {
     [HttpGet]
-    [AllowAnonymous]
+    [DashboardAuthorized(PermissionType.ExpenseApprove)]
     public IActionResult Get()
     {
         return Ok(new { status = "ok", utc = DateTime.UtcNow });

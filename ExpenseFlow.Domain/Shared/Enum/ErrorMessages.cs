@@ -47,7 +47,7 @@
         public static string CompanyNameIsRequired => nameof(CompanyNameIsRequired);
         public static string InvalidCourseStatus => nameof(InvalidCourseStatus);
         public static string SettingKeyNotFound => nameof(SettingKeyNotFound);
-
+        public static string Forbidden => nameof(Forbidden);
         public static string OldPasswordCanNotBeEmpty => nameof(OldPasswordCanNotBeEmpty);
         public static string NewPasswordCanNotBeEmpty => nameof(NewPasswordCanNotBeEmpty);
         public static string PermissionsCanNotBeEmpty => nameof(PermissionsCanNotBeEmpty);
