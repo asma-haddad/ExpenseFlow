@@ -1,4 +1,6 @@
 using ExpenseFlow.Domain.Model.Base;
+using ExpenseFlow.Domain.Model.Department;
+using ExpenseFlow.Domain.Model.Expense;
 
 namespace ExpenseFlow.Domain.Model.User;
 
@@ -13,8 +15,8 @@ public class UserModel : BaseModel
     public Guid RoleId { get; set; }
     public RoleModel Role { get; set; }
 
-    public Guid? ManagerId { get; set; }
-    public UserModel Manager { get; set; }
-
-    public ICollection<UserModel> Employees { get; set; } = new List<UserModel>();
+    public Guid? DepartmentId { get; set; }
+    public DepartmentModel? Department { get; set; }
+    public ICollection<ExpenseModel> Expenses { get; set; }
+    public ICollection<DepartmentModel> ManagedDepartments { get; set; } = new List<DepartmentModel>();
 }

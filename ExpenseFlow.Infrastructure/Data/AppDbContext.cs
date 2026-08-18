@@ -1,6 +1,7 @@
 using ExpenseFlow.Domain.Base.Language;
 using ExpenseFlow.Domain.Model.AuditLog;
 using ExpenseFlow.Domain.Model.Base;
+using ExpenseFlow.Domain.Model.Department;
 using ExpenseFlow.Domain.Model.User;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -47,6 +48,16 @@ public class AppDbContext : DbContext
         ApplyConfigurations(modelBuilder);
         ApplyLanguageDatabaseFunctions(modelBuilder);
         ApplyIsValidQueryFilter(modelBuilder);
+
+        modelBuilder.Entity<UserModel>()
+    .HasOne(u => u.Department)
+    .WithMany(d => d.Employees)
+    .HasForeignKey(u => u.DepartmentId);
+
+        modelBuilder.Entity<DepartmentModel>()
+             .HasOne(u => u.Manager).
+             WithMany(d => d.ManagedDepartments)
+             .HasForeignKey(u => u.ManagerId);
     }
 
     private static void ApplyConfigurations(

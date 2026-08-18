@@ -352,7 +352,6 @@ public static class Seeder
 
                 RoleId = adminRole.Id,
 
-                IsActive = true
             };
 
         var passwordHasher =
