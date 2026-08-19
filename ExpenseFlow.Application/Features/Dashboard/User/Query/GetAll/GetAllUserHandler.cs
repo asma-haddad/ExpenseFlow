@@ -22,6 +22,8 @@ namespace ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll
             var query = context.User/*.Where(p => request.Query == null || p.City.Search(request.Query))*/;
 
 
+
+
             if (request.Filters != null && request.Filters.Any())
             {
                 // query = QueryFilterHelper.ApplyFilters(query, request.Filters, request.IsAnd, acceptLanguage, _dynamicLinqConfig);

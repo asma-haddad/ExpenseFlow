@@ -1,7 +1,9 @@
 using ExpenseFlow.Domain.Base.Language;
 using ExpenseFlow.Domain.Model.AuditLog;
 using ExpenseFlow.Domain.Model.Base;
+using ExpenseFlow.Domain.Model.Category;
 using ExpenseFlow.Domain.Model.Department;
+using ExpenseFlow.Domain.Model.Expense;
 using ExpenseFlow.Domain.Model.User;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -29,7 +31,13 @@ public class AppDbContext : DbContext
     public DbSet<SessionModel> Session { get; set; }
 
     #endregion
+    #region
+    public DbSet<DepartmentModel> Department { get; set; }
+    public DbSet<ExpenseModel> Expense { get; set; }
+    public DbSet<CategoryModel> Category { get; set; }
 
+    public DbSet<ExpenseApprovalModel> ExpenseApproval { get; set; }
+    #endregion
     #region AuditLog
 
     public DbSet<AuditLog> AuditLog { get; set; }

@@ -9,9 +9,7 @@ namespace ExpenseFlow.Infrastructure.Seeder;
 
 public static class Seeder
 {
-    private sealed record RoleSeedDefinition(
-        RoleType RoleType,
-        string Name);
+    private sealed record RoleSeedDefinition(RoleType RoleType, string Name);
 
     private static readonly RoleSeedDefinition[] RoleDefinitions =
     {
@@ -22,89 +20,51 @@ public static class Seeder
     };
 
 
-    public static async Task SeedData(
-        IServiceProvider services,
-        CancellationToken cancellationToken = default)
+    public static async Task SeedData(IServiceProvider services, CancellationToken cancellationToken = default)
     {
-        using IServiceScope scope =
-            services.CreateScope();
+        using IServiceScope scope = services.CreateScope();
 
-        AppDbContext db =
-            scope.ServiceProvider
-                .GetRequiredService<AppDbContext>();
+        AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         ValidateRoles();
 
-        await using var transaction =
-            await db.Database.BeginTransactionAsync(
-                cancellationToken);
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            Dictionary<RoleType, RoleModel> roles =
-                await SeedRolesAsync(
-                    db,
-                    cancellationToken);
+            Dictionary<RoleType, RoleModel> roles = await SeedRolesAsync(db, cancellationToken);
 
             Dictionary<PermissionType, PermissionModel>
-                permissions =
-                    await SeedPermissionsAsync(
-                        db,
-                        cancellationToken);
+                permissions = await SeedPermissionsAsync(db, cancellationToken);
 
-            await SeedRolePermissionsAsync(
-                db,
-                roles,
-                permissions,
-                cancellationToken);
+            await SeedRolePermissionsAsync(db, roles, permissions, cancellationToken);
 
-            await SeedAdminUserAsync(
-                db,
-                roles,
-                cancellationToken);
+            await SeedAdminUserAsync(db, roles, cancellationToken);
 
-            await transaction.CommitAsync(
-                cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
         catch
         {
-            await transaction.RollbackAsync(
-                cancellationToken);
-
+            await transaction.RollbackAsync(cancellationToken);
             throw;
         }
     }
-
-
     // =====================================================
     // Roles
     // =====================================================
 
     private static async Task<
-        Dictionary<RoleType, RoleModel>>
-        SeedRolesAsync(
-            AppDbContext db,
-            CancellationToken cancellationToken)
+        Dictionary<RoleType, RoleModel>> SeedRolesAsync(AppDbContext db, CancellationToken cancellationToken)
     {
-        Dictionary<RoleType, RoleModel> roles =
-            await db.Role
-                .ToDictionaryAsync(
-                    role => role.RoleType,
-                    cancellationToken);
+        Dictionary<RoleType, RoleModel> roles = await db.Role.ToDictionaryAsync(role => role.RoleType, cancellationToken);
 
-        foreach (RoleSeedDefinition definition
-                 in RoleDefinitions)
+        foreach (RoleSeedDefinition definition in RoleDefinitions)
         {
-            if (roles.TryGetValue(
-                    definition.RoleType,
-                    out RoleModel? existingRole))
+            if (roles.TryGetValue(definition.RoleType, out RoleModel? existingRole))
             {
-                existingRole.Name =
-                    definition.Name;
-
+                existingRole.Name = definition.Name;
                 continue;
             }
-
             var role = new RoleModel
             {
                 Id = Guid.NewGuid(),
@@ -113,42 +73,23 @@ public static class Seeder
             };
 
             db.Role.Add(role);
-
-            roles.Add(
-                definition.RoleType,
-                role);
+            roles.Add(definition.RoleType, role);
         }
-
-        await db.SaveChangesAsync(
-            cancellationToken);
-
+        await db.SaveChangesAsync(cancellationToken);
         return roles;
     }
-
-
     // =====================================================
     // Permissions
     // =====================================================
 
-    private static async Task<
-        Dictionary<PermissionType, PermissionModel>>
-        SeedPermissionsAsync(
-            AppDbContext db,
-            CancellationToken cancellationToken)
+    private static async Task<Dictionary<PermissionType, PermissionModel>>
+        SeedPermissionsAsync(AppDbContext db, CancellationToken cancellationToken)
     {
         Dictionary<PermissionType, PermissionModel>
-            permissions =
-                await db.Permission
-                    .ToDictionaryAsync(
-                        permission =>
-                            permission.Code,
-                        cancellationToken);
+            permissions = await db.Permission.ToDictionaryAsync(permission => permission.Code, cancellationToken);
 
-        PermissionType[] permissionTypes =
-            Enum.GetValues<PermissionType>();
-
-        foreach (PermissionType permissionType
-                 in permissionTypes)
+        PermissionType[] permissionTypes = Enum.GetValues<PermissionType>();
+        foreach (PermissionType permissionType in permissionTypes)
         {
             string permissionName =
                 permissionType.ToString();
@@ -183,12 +124,9 @@ public static class Seeder
 
         return permissions;
     }
-
-
     // =====================================================
     // Role - Permission
     // =====================================================
-
     private static async Task SeedRolePermissionsAsync(
         AppDbContext db,
         IReadOnlyDictionary<RoleType, RoleModel> roles,
@@ -197,10 +135,7 @@ public static class Seeder
             PermissionModel> permissions,
         CancellationToken cancellationToken)
     {
-        Dictionary<
-            RoleType,
-            PermissionType[]> rolePermissionMap =
-                CreateRolePermissionMap();
+        Dictionary<RoleType, PermissionType[]> rolePermissionMap = CreateRolePermissionMap();
 
         var existingLinkData =
             await db.RolePermission
@@ -251,13 +186,11 @@ public static class Seeder
                 {
                     continue;
                 }
-
-                newLinks.Add(
-                    new PermissionRoleModel
-                    {
-                        RoleId = role.Id,
-                        PermissionId = permission.Id
-                    });
+                newLinks.Add(new PermissionRoleModel
+                {
+                    RoleId = role.Id,
+                    PermissionId = permission.Id
+                });
             }
         }
 

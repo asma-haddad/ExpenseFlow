@@ -1,6 +1,6 @@
 ﻿using ExpenseFlow.Domain.Base.Language;
 using ExpenseFlow.Domain.Model.Base;
-using ExpenseFlow.Domain.Model.NewFolder;
+using ExpenseFlow.Domain.Model.Category;
 using ExpenseFlow.Domain.Model.User;
 using ExpenseFlow.Domain.Shared.Enum;
 

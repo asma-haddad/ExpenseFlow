@@ -2,7 +2,7 @@
 using ExpenseFlow.Domain.Model.Base;
 using ExpenseFlow.Domain.Model.Expense;
 
-namespace ExpenseFlow.Domain.Model.NewFolder
+namespace ExpenseFlow.Domain.Model.Category
 {
     public class CategoryModel : BaseModel
     {
