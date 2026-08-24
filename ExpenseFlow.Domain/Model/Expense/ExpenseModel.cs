@@ -14,7 +14,7 @@ namespace ExpenseFlow.Domain.Model.Expense
         public CategoryModel Category { get; set; }
 
         public double Amount { get; set; } = 0;
-        public string? ReceiptImageUrl { get; set; } = null;
+        public string ReceiptImageUrl { get; set; }
         public LanguagePropertyModel Title { get; set; }
         public LanguagePropertyModel Description { get; set; }
 

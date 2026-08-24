@@ -252,11 +252,8 @@ public static class Seeder
             RoleModel> roles,
         CancellationToken cancellationToken)
     {
-        const string adminEmail =
-            "admin@expenseflow.local";
-
-        const string adminPassword =
-            "Admin@123";
+        const string adminEmail = "admin@gmail.com";
+        const string adminPassword = "Aaa@1234";
 
         bool adminExists =
             await db.User

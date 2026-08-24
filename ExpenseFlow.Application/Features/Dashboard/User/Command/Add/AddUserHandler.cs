@@ -1,51 +1,98 @@
-﻿//using ExpenseFlow.Application.Abstraction;
-//using ExpenseFlow.Application.Extensions;
-//using ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll;
-//using ExpenseFlow.Domain.Base;
-//using ExpenseFlow.Domain.Base.Dto;
-//using ExpenseFlow.Infrastructure.Data;
-//using Microsoft.AspNetCore.Http;
-//using Microsoft.EntityFrameworkCore;
-//using System.Linq.Dynamic.Core;
+﻿using ExpenseFlow.Application.Abstraction;
+using ExpenseFlow.Domain.Base;
+using ExpenseFlow.Domain.Model.User;
+using ExpenseFlow.Domain.Shared.Enum;
+using ExpenseFlow.Infrastructure.Data;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core;
 
-//namespace ExpenseFlow.Application.Features.Dashboard.User.Command.Add
-//{
+namespace ExpenseFlow.Application.Features.Dashboard.User.Command.Add
+{
 
-//    public class AddUserHandler : BaseService, ICommandHandler<AddUserCommand.Request>
-//    {
-//        private readonly ParsingConfig _dynamicLinqConfig;
-
-
-//        public AddUserHandler(AppDbContext context, IHttpContextAccessor httpContextAccessor, ParsingConfig dynamicLinqConfig) : base(context, httpContextAccessor)
-//        {
-//            _dynamicLinqConfig = dynamicLinqConfig;
-
-//        }
+    public class AddUserHandler : BaseService, ICommandHandler<AddUserCommand.Request>
+    {
+        private readonly ParsingConfig _dynamicLinqConfig;
 
 
-//        public async Task Handle(AddUserCommand.Request request, CancellationToken cancellationToken)
-//        {
-//            var result = new Result<GetAllDataResponse<GetAllUserQuery.Response>>();
-//            var query = context.User
-//           .AsNoTracking()
-//           .AsQueryable();
+        public AddUserHandler(AppDbContext context, IHttpContextAccessor httpContextAccessor, ParsingConfig dynamicLinqConfig) : base(context, httpContextAccessor)
+        {
+            _dynamicLinqConfig = dynamicLinqConfig;
 
-//            if (request.RoleType.HasValue)
-//            {
-//                query = query.Where(x => x.Role.RoleType == request.RoleType.Value);
-//            }
-//            result.Data = await query.OrderByDescending(x => x.CreatedAt)
-//                .PaginateAsync(u => new GetAllUserQuery.Response
-//                {
-//                    Id = u.Id,
-//                    Email = u.Email,
-//                    LastName = u.LastName,
-//                    FirstName = u.FirstName,
+        }
 
+        public async Task<Result> Handle(AddUserCommand.Request request, CancellationToken cancellationToken)
+        {
+            var result = new Result();
 
-//                }, request, cancellationToken);
+            // 1- تأكد من الـ Role
+            var role = await context.Role
+                .FirstOrDefaultAsync(
+                    x => x.Id == request.RoleId,
+                    cancellationToken);
 
-//            return result;
-//        }
-//    }
-//}
+            if (role == null)
+            {
+                result.ThrowException(
+                    ErrorMessages.NotFound,
+                    ResultStatus.NotFound);
+            }
+
+            var needsDepartment =
+                role.RoleType == RoleType.Employee ||
+                role.RoleType == RoleType.Manager;
+
+            if (needsDepartment && request.DepartmentId == null)
+            {
+                result.ThrowException(
+                    "Department is required",
+                    ResultStatus.ValidationError);
+            }
+
+            // 3- جيبي القسم وتحققي منه قبل حفظ المستخدم
+            var department = needsDepartment
+                ? await context.Department
+                    .FirstOrDefaultAsync(
+                        x => x.Id == request.DepartmentId,
+                        cancellationToken)
+                : null;
+
+            if (needsDepartment && department == null)
+            {
+                result.ThrowException(
+                    ErrorMessages.NotFound,
+                    ResultStatus.NotFound);
+            }
+
+            // 4- بعد ما تأكدنا من كلشي، أنشئ المستخدم
+            var user = new UserModel
+            {
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Email = request.Email,
+                PasswordHash = request.Password,
+                RoleId = request.RoleId,
+            };
+
+            // 5- إذا Employee اربطيه بالقسم
+            if (role.RoleType == RoleType.Employee)
+            {
+                user.DepartmentId = department!.Id;
+            }
+
+            // 6- احفظي المستخدم
+            await context.User.AddAsync(user, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+
+            // 7- إذا Manager عيّنيه مدير للقسم
+            if (role.RoleType == RoleType.Manager)
+            {
+                department!.ManagerId = user.Id;
+
+                await context.SaveChangesAsync(cancellationToken);
+            }
+
+            return result;
+        }
+    }
+}

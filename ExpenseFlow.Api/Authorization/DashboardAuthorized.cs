@@ -10,11 +10,11 @@ namespace ExpenseFlow.Api.Authorization;
 public class DashboardAuthorized
     : AuthorizeAttribute, IAuthorizationFilter
 {
-    private readonly PermissionType _permission;
+    private readonly PermissionType[] _permissions;
 
-    public DashboardAuthorized(PermissionType permission)
+    public DashboardAuthorized(params PermissionType[] permissions)
     {
-        _permission = permission;
+        _permissions = permissions;
     }
 
     public void OnAuthorization(
@@ -27,21 +27,17 @@ public class DashboardAuthorized
 
         string? userClaim =
             context.HttpContext.User
-                .FindFirstValue(
-                    ClaimTypes.NameIdentifier);
+                .FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (!Guid.TryParse(
-                userClaim,
-                out Guid userId))
+        if (!Guid.TryParse(userClaim, out Guid userId))
         {
             throw new UnAuthorizedException(
                 ErrorMessages.UnAuthenticated.ToString());
         }
 
         bool sessionExists =
-            db.Session.Any(
-                session =>
-                    session.RefId == userId);
+            db.Session.Any(session =>
+                session.RefId == userId);
 
         if (!sessionExists)
         {
@@ -54,8 +50,8 @@ public class DashboardAuthorized
                 user.Id == userId &&
                 user.Role.RolePermissions.Any(
                     rolePermission =>
-                        rolePermission.Permission.Code
-                        == _permission));
+                        _permissions.Contains(
+                            rolePermission.Permission.Code)));
 
         if (!hasPermission)
         {

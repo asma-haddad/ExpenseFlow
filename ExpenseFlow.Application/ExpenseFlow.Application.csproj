@@ -31,19 +31,9 @@
 
   <ItemGroup Label="ZeeleadStyleFolders">
     <Folder Include="Features\Dashboard\Auth\ForgotPassword\" />
-    <Folder Include="Features\Dashboard\Auth\Login\" />
     <Folder Include="Features\Dashboard\Auth\Logout\" />
     <Folder Include="Features\Dashboard\Auth\RefreshToken\" />
     <Folder Include="Features\Dashboard\Auth\ResetPassword\" />
-    <Folder Include="Features\Dashboard\Budget\Command\Add\" />
-    <Folder Include="Features\Dashboard\Budget\Command\BulkDelete\" />
-    <Folder Include="Features\Dashboard\Budget\Command\Delete\" />
-    <Folder Include="Features\Dashboard\Budget\Command\Import\" />
-    <Folder Include="Features\Dashboard\Budget\Command\Update\" />
-    <Folder Include="Features\Dashboard\Budget\Command\UpdateStatus\" />
-    <Folder Include="Features\Dashboard\Budget\Query\GetAll\" />
-    <Folder Include="Features\Dashboard\Budget\Query\GetDetails\" />
-    <Folder Include="Features\Dashboard\Budget\Query\GetStatistics\" />
     <Folder Include="Features\Dashboard\Category\Command\Add\" />
     <Folder Include="Features\Dashboard\Category\Command\BulkDelete\" />
     <Folder Include="Features\Dashboard\Category\Command\Delete\" />
@@ -59,8 +49,6 @@
     <Folder Include="Features\Dashboard\Expense\Command\Import\" />
     <Folder Include="Features\Dashboard\Expense\Command\Update\" />
     <Folder Include="Features\Dashboard\Expense\Command\UpdateStatus\" />
-    <Folder Include="Features\Dashboard\Expense\Query\GetAll\" />
-    <Folder Include="Features\Dashboard\Expense\Query\GetDetails\" />
     <Folder Include="Features\Dashboard\Expense\Query\GetStatistics\" />
     <Folder Include="Features\Dashboard\Notification\Command\Add\" />
     <Folder Include="Features\Dashboard\Notification\Command\Delete\" />

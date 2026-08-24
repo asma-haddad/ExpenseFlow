@@ -46,7 +46,6 @@
 
 
   <ItemGroup Label="ZeeleadStyleFolders">
-    <Folder Include="Controllers\Dashboard\" />
     <Folder Include="Controllers\Help\" />
     <Folder Include="Controllers\Report\" />
     <Folder Include="Extension\" />

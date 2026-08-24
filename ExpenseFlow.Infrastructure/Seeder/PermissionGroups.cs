@@ -11,7 +11,8 @@ namespace ExpenseFlow.Infrastructure.Seeder
         PermissionType.ExpenseCreate,
         PermissionType.ExpenseEditOwnDraft,
         PermissionType.ExpenseDeleteOwnDraft,
-        PermissionType.ExpenseSubmit
+        PermissionType.ExpenseSubmit,
+
     };
 
 
@@ -20,7 +21,7 @@ namespace ExpenseFlow.Infrastructure.Seeder
         {
         PermissionType.ExpenseViewDepartment,
         PermissionType.ExpenseApprove,
-        PermissionType.ExpenseReject
+        PermissionType.ExpenseReject,
     };
 
 
@@ -29,7 +30,8 @@ namespace ExpenseFlow.Infrastructure.Seeder
         {
         PermissionType.ExpenseViewApproved,
         PermissionType.ExpenseMarkAsPaid,
-        PermissionType.ExpenseViewReports
+        PermissionType.ExpenseViewReports,
+        PermissionType.ExpenseViewAll
     };
 
 

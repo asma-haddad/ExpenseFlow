@@ -2,6 +2,9 @@
 {
     public enum PermissionType
     {
+
+        ExpenseViewAll = 3004,
+
         // Employee
         ExpenseViewOwn = 1001,
         ExpenseCreate = 1002,
@@ -26,5 +29,6 @@
         DepartmentManage = 4004,
         ExpenseCategoryManage = 4005,
         SystemSettingManage = 4006
+
     }
 }

@@ -1,9 +1,11 @@
 ﻿using ExpenseFlow.Application.Abstraction;
 using ExpenseFlow.Application.Extensions;
+using ExpenseFlow.Application.Services.Helper;
 using ExpenseFlow.Domain.Base;
 using ExpenseFlow.Domain.Base.Dto;
 using ExpenseFlow.Infrastructure.Data;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
 namespace ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll
 {
@@ -19,25 +21,25 @@ namespace ExpenseFlow.Application.Features.Dashboard.User.Query.GetAll
         {
             var result = new Result<GetAllDataResponse<GetAllUserQuery.Response>>();
 
-            var query = context.User/*.Where(p => request.Query == null || p.City.Search(request.Query))*/;
+            var query = context.User./*Where(p => request.Query == null || p.City.Search(request.Query))*/AsNoTracking();
 
 
 
 
             if (request.Filters != null && request.Filters.Any())
             {
-                // query = QueryFilterHelper.ApplyFilters(query, request.Filters, request.IsAnd, acceptLanguage, _dynamicLinqConfig);
+                query = QueryFilterHelper.ApplyFilters(query, request.Filters, request.IsAnd, acceptLanguage, _dynamicLinqConfig);
             }
-            //result.Data = await query
-            //    .PaginateAsync(
-            //        u => new GetAllUserQuery.Response
-            //        {
-            //            Id = u.Id,
-            //            Email = u.Email,
-            //            FirstName = u.FirstName,
-            //            LastName = u.LastName
-            //        }, request
-            //        );
+            result.Data = await query
+                .PaginateAsync(
+                    u => new GetAllUserQuery.Response
+                    {
+                        Id = u.Id,
+                        Email = u.Email,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName
+                    }, request
+                    );
 
 
             result.Data = await query
