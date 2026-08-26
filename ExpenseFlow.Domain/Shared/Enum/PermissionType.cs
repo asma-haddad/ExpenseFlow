@@ -4,7 +4,7 @@
     {
 
         ExpenseViewAll = 3004,
-
+        AddUser = 3005,
         // Employee
         ExpenseViewOwn = 1001,
         ExpenseCreate = 1002,
