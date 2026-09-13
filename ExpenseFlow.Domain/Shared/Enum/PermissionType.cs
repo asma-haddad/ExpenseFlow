@@ -28,7 +28,7 @@
         PermissionManage = 4003,
         DepartmentManage = 4004,
         ExpenseCategoryManage = 4005,
-        SystemSettingManage = 4006
-
+        SystemSettingManage = 4006,
+        GetRole
     }
 }

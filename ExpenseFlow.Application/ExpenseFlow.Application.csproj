@@ -62,7 +62,6 @@
     <Folder Include="Features\Dashboard\Role\Command\Import\" />
     <Folder Include="Features\Dashboard\Role\Command\Update\" />
     <Folder Include="Features\Dashboard\Role\Command\UpdateStatus\" />
-    <Folder Include="Features\Dashboard\Role\Query\GetAll\" />
     <Folder Include="Features\Dashboard\Role\Query\GetDetails\" />
     <Folder Include="Features\Dashboard\Role\Query\GetStatistics\" />
     <Folder Include="Features\Dashboard\Setting\Command\Update\" />
