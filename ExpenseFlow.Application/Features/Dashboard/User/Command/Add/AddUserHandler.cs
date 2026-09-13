@@ -1,46 +1,58 @@
 ﻿using ExpenseFlow.Application.Abstraction;
+using ExpenseFlow.Application.Services.Helper;
+using ExpenseFlow.Application.Services.Interface;
 using ExpenseFlow.Domain.Base;
 using ExpenseFlow.Domain.Model.User;
 using ExpenseFlow.Domain.Shared.Enum;
 using ExpenseFlow.Infrastructure.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Dynamic.Core;
 
 namespace ExpenseFlow.Application.Features.Dashboard.User.Command.Add
 {
-
     public class AddUserHandler : BaseService, ICommandHandler<AddUserCommand.Request>
     {
-        private readonly ParsingConfig _dynamicLinqConfig;
-        public AddUserHandler(AppDbContext context, IHttpContextAccessor httpContextAccessor, ParsingConfig dynamicLinqConfig) : base(context, httpContextAccessor)
+        private readonly IEnumerable<IUserRoleHandler> _roleHandlers;
+        public AddUserHandler(AppDbContext context, IHttpContextAccessor httpContextAccessor, IEnumerable<IUserRoleHandler> roleHandlers) : base(context, httpContextAccessor)
         {
-            _dynamicLinqConfig = dynamicLinqConfig;
+            _roleHandlers = roleHandlers;
         }
         public async Task<Result> Handle(AddUserCommand.Request request, CancellationToken cancellationToken)
         {
             var result = new Result();
 
-            var role = await context.Role.FirstOrDefaultAsync(x => x.Id == request.RoleId, cancellationToken);
+            var role = await context.Role
+                .FirstOrDefaultAsync(
+                    x => x.Id == request.RoleId,
+                    cancellationToken);
 
             if (role == null)
             {
                 result.ThrowException(ErrorMessages.NotFound, ResultStatus.NotFound);
             }
 
-            var needsDepartment =
-                role.RoleType == RoleType.Employee || role.RoleType == RoleType.Manager;
+            var roleHandler = _roleHandlers
+                .FirstOrDefault(x =>
+                    x.RoleType == role.RoleType);
+
+            var needsDepartment = roleHandler?.RequiresDepartment ?? false;
 
             if (needsDepartment && request.DepartmentId == null)
             {
                 result.ThrowException("Department is required", ResultStatus.ValidationError);
             }
 
-            var department = needsDepartment ? await context.Department.FirstOrDefaultAsync(x => x.Id == request.DepartmentId, cancellationToken) : null;
-
-            if (needsDepartment && department == null)
+            if (needsDepartment)
             {
-                result.ThrowException(ErrorMessages.NotFound, ResultStatus.NotFound);
+                var departmentExists =
+                    await context.Department.AnyAsync(
+                        x => x.Id == request.DepartmentId,
+                        cancellationToken);
+
+                if (!departmentExists)
+                {
+                    result.ThrowException(ErrorMessages.NotFound, ResultStatus.NotFound);
+                }
             }
 
             var user = new UserModel
@@ -49,21 +61,33 @@ namespace ExpenseFlow.Application.Features.Dashboard.User.Command.Add
                 RoleId = request.RoleId,
                 LastName = request.LastName,
                 FirstName = request.FirstName,
-                PasswordHash = request.Password,
+                PasswordHash = PasswordHelper.HashPassword(request.Password)
             };
-            if (role.RoleType == RoleType.Employee)
-            {
-                user.DepartmentId = department!.Id;
-            }
-            await context.User.AddAsync(user, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
 
-            if (role.RoleType == RoleType.Manager)
+            if (roleHandler != null)
             {
-                department!.ManagerId = user.Id;
-
-                await context.SaveChangesAsync(cancellationToken);
+                await roleHandler.BeforeSaveAsync(
+                    user,
+                    request.DepartmentId,
+                    cancellationToken);
             }
+
+            await context.User.AddAsync(
+                user,
+                cancellationToken);
+
+            await context.SaveChangesAsync(
+                cancellationToken);
+
+            // Role-specific logic after saving
+            if (roleHandler != null)
+            {
+                await roleHandler.AfterSaveAsync(
+                    user,
+                    request.DepartmentId,
+                    cancellationToken);
+            }
+
             return result;
         }
     }

@@ -3,10 +3,12 @@ using EasyDatabaseManager.Endpoints;
 using ExpenseFlow.Api.Extension;
 using ExpenseFlow.Api.Middleware;
 using ExpenseFlow.Application.Services.AutoAssignment;
+using ExpenseFlow.Application.Services.Cop;
 using ExpenseFlow.Application.Services.Email;
 using ExpenseFlow.Application.Services.Excel;
 using ExpenseFlow.Application.Services.File;
 using ExpenseFlow.Application.Services.Helper;
+using ExpenseFlow.Application.Services.Interface;
 using ExpenseFlow.Application.Services.Token;
 using ExpenseFlow.Domain.Base.Language;
 using ExpenseFlow.Infrastructure.Data;
@@ -55,6 +57,8 @@ builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IExcelImportService, ExcelImportService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUserRoleHandler, ManagerRoleHandler>();
+builder.Services.AddScoped<IUserRoleHandler, EmployeeRoleHandler>();
 
 builder.Services.AddSingleton(_ =>
 {

@@ -15,14 +15,10 @@ namespace ExpenseFlow.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(
-        DbContextOptions<AppDbContext> options)
-        : base(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
-
     #region User
-
     public DbSet<UserModel> User { get; set; }
     public DbSet<RefreshTokenModel> RefreshToken { get; set; }
     public DbSet<RoleModel> Role { get; set; }
@@ -44,39 +40,28 @@ public class AppDbContext : DbContext
 
     #endregion
 
-    protected override void OnModelCreating(
-     ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
         modelBuilder.Ignore<LanguagePropertyModel>();
-
         ApplyLanguagePropertyConfiguration(modelBuilder);
-
         ApplyConfigurations(modelBuilder);
         ApplyLanguageDatabaseFunctions(modelBuilder);
         ApplyIsValidQueryFilter(modelBuilder);
-
         modelBuilder.Entity<UserModel>()
     .HasOne(u => u.Department)
     .WithMany(d => d.Employees)
     .HasForeignKey(u => u.DepartmentId);
-
         modelBuilder.Entity<DepartmentModel>()
              .HasOne(u => u.Manager).
              WithMany(d => d.ManagedDepartments)
              .HasForeignKey(u => u.ManagerId);
     }
 
-    private static void ApplyConfigurations(
-        ModelBuilder modelBuilder)
+    private static void ApplyConfigurations(ModelBuilder modelBuilder)
     {
         #region User
-
-
-
         #endregion
-
         #region AuditLog
 
         modelBuilder.Entity<AuditLog>(entity =>
@@ -335,34 +320,24 @@ public class AppDbContext : DbContext
 
         return base.SaveChanges();
     }
-
-    public override int SaveChanges(
-        bool acceptAllChangesOnSuccess)
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         FillBaseInfo();
 
-        return base.SaveChanges(
-            acceptAllChangesOnSuccess);
+        return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
-    public override Task<int> SaveChangesAsync(
-        CancellationToken cancellationToken = default)
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         FillBaseInfo();
 
-        return base.SaveChangesAsync(
-            cancellationToken);
+        return base.SaveChangesAsync(cancellationToken);
     }
-
-    public override Task<int> SaveChangesAsync(
-        bool acceptAllChangesOnSuccess,
-        CancellationToken cancellationToken = default)
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         FillBaseInfo();
 
-        return base.SaveChangesAsync(
-            acceptAllChangesOnSuccess,
-            cancellationToken);
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
 
     private void FillBaseInfo()

@@ -17,11 +17,7 @@ namespace ExpenseFlow.Application.Features.Dashboard.User.Command.Add
 
         }
 
-        public class Response
-        {
-            public string Email { set; get; }
-            public string Password { set; get; }
-        }
+
     }
 
 }

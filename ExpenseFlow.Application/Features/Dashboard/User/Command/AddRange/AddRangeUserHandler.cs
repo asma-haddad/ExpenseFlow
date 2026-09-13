@@ -1,4 +1,5 @@
 ﻿using ExpenseFlow.Application.Abstraction;
+using ExpenseFlow.Application.Services.Helper;
 using ExpenseFlow.Domain.Base;
 using ExpenseFlow.Domain.Model.User;
 using ExpenseFlow.Domain.Shared.Enum;
@@ -38,7 +39,7 @@ namespace ExpenseFlow.Application.Features.Dashboard.User.Command.AddRange
                     FirstName = employee.FirstName,
                     LastName = employee.LastName,
                     Email = employee.Email,
-                    PasswordHash = employee.Password,
+                    PasswordHash = PasswordHelper.HashPassword(employee.Password),
                     RoleId = employeeRole.Id,
 
                     DepartmentId = department.Id
