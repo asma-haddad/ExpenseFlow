@@ -5,18 +5,26 @@ using ExpenseFlow.Domain.Model.Category;
 using ExpenseFlow.Domain.Model.Department;
 using ExpenseFlow.Domain.Model.Expense;
 using ExpenseFlow.Domain.Model.User;
+using ExpenseFlow.Domain.Shared.Enum;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace ExpenseFlow.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    private readonly AuditScope _auditScope;
+    public AppDbContext(DbContextOptions<AppDbContext> options, AuditScope auditScope, IHttpContextAccessor httpContextAccessor) : base(options)
     {
+        _auditScope = auditScope;
+        _httpContextAccessor = httpContextAccessor;
     }
     #region User
     public DbSet<UserModel> User { get; set; }
@@ -37,15 +45,13 @@ public class AppDbContext : DbContext
     #region AuditLog
 
     public DbSet<AuditLog> AuditLog { get; set; }
-
+    public DbSet<EntityPropertyChangeModel> EntityPropertyChanges { get; set; }
     #endregion
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.Ignore<LanguagePropertyModel>();
         ApplyLanguagePropertyConfiguration(modelBuilder);
-        ApplyConfigurations(modelBuilder);
         ApplyLanguageDatabaseFunctions(modelBuilder);
         ApplyIsValidQueryFilter(modelBuilder);
         modelBuilder.Entity<UserModel>()
@@ -58,33 +64,6 @@ public class AppDbContext : DbContext
              .HasForeignKey(u => u.ManagerId);
     }
 
-    private static void ApplyConfigurations(ModelBuilder modelBuilder)
-    {
-        #region User
-        #endregion
-        #region AuditLog
-
-        modelBuilder.Entity<AuditLog>(entity =>
-        {
-            entity.ToTable("AuditLog");
-
-            entity.HasKey(x => x.Id);
-
-            entity.Property(x => x.Method)
-                .HasMaxLength(20);
-
-            entity.Property(x => x.Path)
-                .HasMaxLength(1000);
-
-            entity.Property(x => x.IpAddress)
-                .HasMaxLength(100);
-
-            entity.Property(x => x.UserId)
-                .HasMaxLength(100);
-        });
-
-        #endregion
-    }
 
     #region Language property configuration
 
@@ -167,7 +146,6 @@ public class AppDbContext : DbContext
     }
 
     #endregion
-
     #region PostgreSQL language functions
 
     private static void ApplyLanguageDatabaseFunctions(
@@ -263,7 +241,6 @@ public class AppDbContext : DbContext
     }
 
     #endregion
-
     #region Global query filter
 
     private static void ApplyIsValidQueryFilter(
@@ -314,81 +291,206 @@ public class AppDbContext : DbContext
 
     #region Save changes
 
-    public override int SaveChanges()
+    public async Task SaveChangesAuditLogAsync()
     {
-        FillBaseInfo();
-
-        return base.SaveChanges();
-    }
-    public override int SaveChanges(bool acceptAllChangesOnSuccess)
-    {
-        FillBaseInfo();
-
-        return base.SaveChanges(acceptAllChangesOnSuccess);
+        await base.SaveChangesAsync();
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async Task<int> SaveChangesAsync(
+        CancellationToken cancellationToken = default)
     {
         FillBaseInfo();
-
-        return base.SaveChangesAsync(cancellationToken);
+        var auditEntries = OnBeforeSaveChanges();
+        var result = await base.SaveChangesAsync(cancellationToken);
+        await OnAfterSaveChanges(auditEntries);
+        return result;
     }
-    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    private List<AuditEntry> OnBeforeSaveChanges()
     {
-        FillBaseInfo();
 
-        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-    }
+        var auditEntries = new List<AuditEntry>();
 
-    private void FillBaseInfo()
-    {
-        var dateTime = DateTime.UtcNow;
-
-        var entries = ChangeTracker
-            .Entries<BaseModel>()
-            .ToList();
-
-        foreach (var entry in entries)
+        foreach (var entry in ChangeTracker.Entries())
         {
-            switch (entry.State)
+            if (entry.Entity is AuditLog || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+                continue;
+
+            var auditEntry = new AuditEntry(entry)
             {
-                case EntityState.Added:
-                    {
-                        entry.Entity.CreatedAt = dateTime;
-                        entry.Entity.UpdatedAt = null;
-                        entry.Entity.DeletedAt = null;
-                        entry.Entity.IsValid = true;
+                TableName = entry.Metadata.GetTableName(),
+                Action = entry.State.ToString()
+            };
 
-                        break;
-                    }
+            bool isSoftDelete = entry.Properties.Any(p => p.Metadata.Name == "IsValid")
+                && entry.OriginalValues["IsValid"]?.ToString() == "True"
+                && entry.CurrentValues["IsValid"]?.ToString() == "False";
 
-                case EntityState.Modified:
-                    {
-                        entry.Entity.UpdatedAt = dateTime;
+            foreach (var property in entry.Properties)
+            {
+                string propertyName = property.Metadata.Name;
 
-                        entry.Property(x => x.CreatedAt)
-                            .IsModified = false;
+                if (property.IsTemporary)
+                {
+                    auditEntry.TemporaryProperties.Add(property);
+                    continue;
+                }
 
-                        break;
-                    }
+                var originalValue = property.OriginalValue;
+                object newValue;
 
-                case EntityState.Deleted:
-                    {
-                        // تحويل الحذف الحقيقي إلى Soft Delete.
-                        entry.State = EntityState.Modified;
+                if (isSoftDelete && propertyName != "IsValid")
+                {
+                    newValue = null;
+                }
+                else
+                {
+                    newValue = property.CurrentValue;
+                }
 
-                        entry.Entity.IsValid = false;
-                        entry.Entity.DeletedAt = dateTime;
-                        entry.Entity.UpdatedAt = dateTime;
-
-                        entry.Property(x => x.CreatedAt)
-                            .IsModified = false;
-
-                        break;
-                    }
+                auditEntry.OldValues[propertyName] = originalValue;
+                auditEntry.NewValues[propertyName] = newValue;
             }
+
+            var entity = entry.Entity;
+            var entityType = entity.GetType();
+
+            auditEntries.Add(auditEntry);
+        }
+
+        return auditEntries;
+    }
+
+    private async Task OnAfterSaveChanges(List<AuditEntry> auditEntries)
+    {
+        foreach (var auditEntry in auditEntries)
+        {
+            var entry = auditEntry.Entry;
+
+            if (entry.Entity is AuditLog) continue;
+
+            var auditLog = new AuditLog
+            {
+                EntityName = auditEntry.TableName,
+                AuditLogEventType = auditEntry.Action switch
+                {
+                    "Added" => EventType.Added,
+                    "Modified" => EventType.Modified,
+                    "Deleted" => EventType.Deleted,
+                },
+                EntityId = Guid.Parse(entry.Properties.First(p => p.Metadata.IsPrimaryKey()).CurrentValue?.ToString()),
+                UserId = GetUserId()
+            };
+
+            foreach (var propertyName in auditEntry.OldValues.Keys.Union(auditEntry.NewValues.Keys))
+            {
+                var oldValue = auditEntry.OldValues.ContainsKey(propertyName) ? auditEntry.OldValues[propertyName]?.ToString() : null;
+                var newValue = auditEntry.NewValues.ContainsKey(propertyName) ? auditEntry.NewValues[propertyName]?.ToString() : null;
+
+                bool shouldLogChange = auditEntry.Action switch
+                {
+                    "Added" => newValue != null,
+                    "Deleted" => oldValue != null,
+                    "Modified" => !Equals(oldValue, newValue),
+                    _ => false
+                };
+
+                if (shouldLogChange)
+                {
+                    var property = entry.Properties.FirstOrDefault(p => p.Metadata.Name == propertyName);
+
+                    auditLog.EntityPropertyChanges.Add(new EntityPropertyChangeModel
+                    {
+                        PropertyName = propertyName,
+                        OriginalValue = auditEntry.Action == "Added" ? null : oldValue,
+                        NewValue = auditEntry.Action == "Deleted" ? null : newValue,
+                        PropertyTypeFullName = property?.Metadata.ClrType.FullName
+                    });
+                }
+            }
+
+            _auditScope.Logs.Add(auditLog);
         }
     }
 
+    public class AuditEntry
+    {
+        public AuditEntry(EntityEntry entry)
+        {
+            Entry = entry;
+        }
+
+        public EntityEntry Entry { get; }
+        public string Action { get; set; }
+        public string TableName { get; set; }
+        public Dictionary<string, object> OldValues { get; } = new();
+        public Dictionary<string, object> NewValues { get; } = new();
+        public List<PropertyEntry> TemporaryProperties { get; } = new();
+
+
+        public bool HasTemporaryProperties => TemporaryProperties.Any();
+    }
+
+    private Guid GetUserId()
+    {
+        var id = Guid.Empty;
+        try
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext?.User?.Identity is { IsAuthenticated: true })
+            {
+                id = Guid.Parse(httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+            }
+        }
+        catch (Exception)
+        {
+            id = Guid.Empty;
+        }
+
+        return id;
+    }
+
     #endregion
+
+    private void FillBaseInfo()
+    {
+        var now = DateTime.UtcNow;
+        var userId = GetUserId();
+
+        foreach (var entry in ChangeTracker.Entries<BaseModel>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+                entry.Entity.CreatedBy = userId;
+                entry.Entity.UpdatedBy = userId;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                var isValidProperty = entry.Property(x => x.IsValid);
+
+                var isSoftDelete =
+                    isValidProperty.IsModified &&
+                    isValidProperty.OriginalValue == true &&
+                    isValidProperty.CurrentValue == false;
+
+                if (isSoftDelete)
+                {
+                    entry.Entity.DeletedAt = now;
+                    entry.Entity.DeletedBy = userId;
+                    entry.Entity.UpdatedAt = now;
+                    entry.Entity.UpdatedBy = userId;
+                }
+                else
+                {
+                    entry.Property(x => x.CreatedAt).IsModified = false;
+                    entry.Property(x => x.CreatedBy).IsModified = false;
+
+                    entry.Entity.UpdatedAt = now;
+                    entry.Entity.UpdatedBy = userId;
+                }
+            }
+        }
+    }
 }
+

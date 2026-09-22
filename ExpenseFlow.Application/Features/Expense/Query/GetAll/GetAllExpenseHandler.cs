@@ -9,9 +9,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using MySql.EntityFrameworkCore.Extensions;
 using System.Linq.Dynamic.Core;
-using static ExpenseFlow.Application.Features.Dashboard.Expense.Query.GetAll.GetAllExpenseQuery;
+using static ExpenseFlow.Application.Features.Expense.Query.GetAll.GetAllExpenseQuery;
 
-namespace ExpenseFlow.Application.Features.Dashboard.Expense.Query.GetAll
+namespace ExpenseFlow.Application.Features.Expense.Query.GetAll
 {
     public class GetAllExpenseHandler : BaseService, IQueryHandler<GetAllExpenseQuery.Request, GetAllDataResponse<GetAllExpenseQuery.Response>>
     {

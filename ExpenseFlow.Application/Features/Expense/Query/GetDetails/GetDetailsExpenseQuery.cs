@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ExpenseFlow.Application.Features.Dashboard.Expense.Query.GetDetails
+namespace ExpenseFlow.Application.Features.Expense.Query.GetDetails
 {
     internal class GetDetailsExpenseQuery
     {

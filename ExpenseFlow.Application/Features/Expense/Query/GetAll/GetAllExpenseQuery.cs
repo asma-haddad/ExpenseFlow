@@ -3,7 +3,7 @@ using ExpenseFlow.Domain.Base.Dto;
 using ExpenseFlow.Domain.Base.Language;
 using ExpenseFlow.Domain.Shared.Enum;
 
-namespace ExpenseFlow.Application.Features.Dashboard.Expense.Query.GetAll
+namespace ExpenseFlow.Application.Features.Expense.Query.GetAll
 {
     public class GetAllExpenseQuery
     {

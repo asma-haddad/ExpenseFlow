@@ -17,12 +17,120 @@ namespace ExpenseFlow.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("ExpenseFlow.Domain.Model.AuditLog.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AuditLogEventType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("AuditScopeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BodyParameters")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BrowserInfo")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClientIpAddress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Exception")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExecutionDuration")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ExecutionTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("HttpMethod")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsValid")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MachineName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MachineOsVersion")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MachineVersion")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MethodName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("QueryParameters")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RequestHeaders")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RequestUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResponseStatus")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ServiceName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SessionId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserRole")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuditScopeId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AuditLog");
+                });
+
+            modelBuilder.Entity("ExpenseFlow.Domain.Model.AuditLog.AuditScope", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -40,26 +148,8 @@ namespace ExpenseFlow.Infrastructure.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<long>("ElapsedMilliseconds")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<bool>("IsValid")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("Method")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("Path")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<int>("StatusCode")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -67,13 +157,58 @@ namespace ExpenseFlow.Infrastructure.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("UserId")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditScope");
+                });
+
+            modelBuilder.Entity("ExpenseFlow.Domain.Model.AuditLog.EntityPropertyChangeModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuditLogId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsValid")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NewValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OriginalValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PropertyName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PropertyTypeFullName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.ToTable("AuditLog", (string)null);
+                    b.HasIndex("AuditLogId");
+
+                    b.ToTable("EntityPropertyChanges");
                 });
 
             modelBuilder.Entity("ExpenseFlow.Domain.Model.Category.CategoryModel", b =>
@@ -539,6 +674,32 @@ namespace ExpenseFlow.Infrastructure.Migrations
                     b.ToTable("User");
                 });
 
+            modelBuilder.Entity("ExpenseFlow.Domain.Model.AuditLog.AuditLog", b =>
+                {
+                    b.HasOne("ExpenseFlow.Domain.Model.AuditLog.AuditScope", "AuditScope")
+                        .WithMany("Logs")
+                        .HasForeignKey("AuditScopeId");
+
+                    b.HasOne("ExpenseFlow.Domain.Model.User.UserModel", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AuditScope");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ExpenseFlow.Domain.Model.AuditLog.EntityPropertyChangeModel", b =>
+                {
+                    b.HasOne("ExpenseFlow.Domain.Model.AuditLog.AuditLog", null)
+                        .WithMany("EntityPropertyChanges")
+                        .HasForeignKey("AuditLogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ExpenseFlow.Domain.Model.Department.DepartmentModel", b =>
                 {
                     b.HasOne("ExpenseFlow.Domain.Model.User.UserModel", "Manager")
@@ -634,6 +795,16 @@ namespace ExpenseFlow.Infrastructure.Migrations
                     b.Navigation("Department");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("ExpenseFlow.Domain.Model.AuditLog.AuditLog", b =>
+                {
+                    b.Navigation("EntityPropertyChanges");
+                });
+
+            modelBuilder.Entity("ExpenseFlow.Domain.Model.AuditLog.AuditScope", b =>
+                {
+                    b.Navigation("Logs");
                 });
 
             modelBuilder.Entity("ExpenseFlow.Domain.Model.Category.CategoryModel", b =>

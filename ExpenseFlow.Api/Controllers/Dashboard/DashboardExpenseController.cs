@@ -1,5 +1,5 @@
 ﻿using ExpenseFlow.Api.Authorization;
-using ExpenseFlow.Application.Features.Dashboard.Expense.Query.GetAll;
+using ExpenseFlow.Application.Features.Expense.Query.GetAll;
 using ExpenseFlow.Domain.Base;
 using ExpenseFlow.Domain.Base.Dto;
 using ExpenseFlow.Domain.Shared.Enum;
