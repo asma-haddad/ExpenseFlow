@@ -11,6 +11,7 @@
         ExpenseEditOwnDraft = 1003,
         ExpenseDeleteOwnDraft = 1004,
         ExpenseSubmit = 1005,
+        AddExpense = 1006,
 
         // Manager
         ExpenseViewDepartment = 2001,

@@ -12,7 +12,7 @@ namespace ExpenseFlow.Infrastructure.Seeder
         PermissionType.ExpenseEditOwnDraft,
         PermissionType.ExpenseDeleteOwnDraft,
         PermissionType.ExpenseSubmit,
-
+        PermissionType.AddExpense,
     };
 
 

@@ -14,6 +14,8 @@ using ExpenseFlow.Domain.Base.Language;
 using ExpenseFlow.Domain.Model.AuditLog;
 using ExpenseFlow.Infrastructure.Data;
 using ExpenseFlow.Infrastructure.Seeder;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -26,7 +28,6 @@ using System.Linq.Dynamic.Core;
 using System.Linq.Dynamic.Core.CustomTypeProviders;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((context, config) =>
@@ -121,7 +122,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.EnableDetailedErrors();
     }
 });
+//----- Hangfire -----------
+builder.Services.AddHangfire(config =>
+{
+    config.UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString));
 
+});
+builder.Services.AddHangfireServer();
 // ---- MediatR ----
 builder.Services.AddMediatR(s =>
 {
@@ -341,7 +348,7 @@ app.UseStaticFiles();
 if (isDev)
 {
     app.UseSwagger();
-
+    app.UseHangfireDashboard("/hangfire");
     app.UseSwaggerUI(s =>
     {
         s.RoutePrefix = "swagger";

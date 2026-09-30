@@ -2,9 +2,8 @@
 {
     public class ErrorMessages
     {
-
+        public static string DepartmentIsRequired => nameof(DepartmentIsRequired);
         public static string NotFound => nameof(NotFound);
-        public static string TagNotFound => nameof(TagNotFound);
         public static string FileIsEmpty => nameof(FileIsEmpty);
         public static string RoleHasUsers => nameof(RoleHasUsers);
         public static string UserNotFound => nameof(UserNotFound);

@@ -10,6 +10,9 @@
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="EasyDatabaseManager" Version="1.1.0" />
     <PackageReference Include="EFCore.BulkExtensions" Version="10.0.1" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.25" />
+    <PackageReference Include="Hangfire.Core" Version="1.8.25" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />
     <PackageReference Include="MailKit" Version="4.16.0" />
     <PackageReference Include="MediatR" Version="14.0.0" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.15.0" />
@@ -35,16 +38,13 @@
     <Folder Include="Features\Dashboard\Auth\Logout\" />
     <Folder Include="Features\Dashboard\Auth\RefreshToken\" />
     <Folder Include="Features\Dashboard\Auth\ResetPassword\" />
-    <Folder Include="Features\Dashboard\Category\Command\Add\" />
     <Folder Include="Features\Dashboard\Category\Command\BulkDelete\" />
     <Folder Include="Features\Dashboard\Category\Command\Delete\" />
     <Folder Include="Features\Dashboard\Category\Command\Import\" />
     <Folder Include="Features\Dashboard\Category\Command\Update\" />
     <Folder Include="Features\Dashboard\Category\Command\UpdateStatus\" />
-    <Folder Include="Features\Dashboard\Category\Query\GetAll\" />
     <Folder Include="Features\Dashboard\Category\Query\GetDetails\" />
     <Folder Include="Features\Dashboard\Category\Query\GetStatistics\" />
-    <Folder Include="Features\Expense\Command\Add\" />
     <Folder Include="Features\Expense\Command\BulkDelete\" />
     <Folder Include="Features\Expense\Command\Delete\" />
     <Folder Include="Features\Expense\Command\Import\" />
@@ -62,8 +62,6 @@
     <Folder Include="Features\Dashboard\Role\Command\Import\" />
     <Folder Include="Features\Dashboard\Role\Command\Update\" />
     <Folder Include="Features\Dashboard\Role\Command\UpdateStatus\" />
-    <Folder Include="Features\Dashboard\Role\Query\GetDetails\" />
-    <Folder Include="Features\Dashboard\Role\Query\GetStatistics\" />
     <Folder Include="Features\Dashboard\Setting\Command\Update\" />
     <Folder Include="Features\Dashboard\Setting\Query\GetAll\" />
     <Folder Include="Features\Dashboard\Statistics\Category\" />

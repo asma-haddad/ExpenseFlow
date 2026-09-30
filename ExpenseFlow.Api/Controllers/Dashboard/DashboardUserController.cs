@@ -17,7 +17,7 @@ namespace ExpenseFlow.Api.Controllers.Dashboard
     {
         [HttpGet]
         [Produces(typeof(GetAllDataResponse<GetAllUserQuery.Response>))]
-        public async Task<IActionResult> GetAllExpense([FromQuery] GetAllUserQuery.Request request)
+        public async Task<IActionResult> GetAllUser([FromQuery] GetAllUserQuery.Request request)
         {
             var result = await sender.Send(request);
             return result.GetResult();

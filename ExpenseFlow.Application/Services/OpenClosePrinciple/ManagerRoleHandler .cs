@@ -17,7 +17,7 @@ namespace ExpenseFlow.Application.Services.Cop
 
         public RoleType RoleType => RoleType.Manager;
 
-        public bool RequiresDepartment => true;
+        public bool RequiresDepartment => false;
 
 
         public Task BeforeSaveAsync(
